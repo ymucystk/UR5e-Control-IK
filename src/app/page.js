@@ -63,6 +63,12 @@ export default function Home() {
     if (j1_object !== undefined) {
       const yAxis = new THREE.Vector3(0,1,0);
       j1_object.quaternion.setFromAxisAngle(yAxis,j1_rotate*(Math.PI/180))
+      console.log("j1_obj",j1_object.quaternion)
+      const oj1 = document.getElementById('oj1').object3D
+      console.log("j1_fig",oj1.quaternion)
+      const cj1 = document.getElementById('cj1').object3D
+      console.log("j1_cur",cj1.quaternion)
+
     }
   }, [j1_rotate])
 
@@ -89,7 +95,7 @@ export default function Home() {
 
   React.useEffect(() => {
     if (j5_object !== undefined) {
-      const yAxis = new THREE.Vector3(0,1,0);
+      const yAxis = new THREE.Vector3(1,0,0);
       j5_object.quaternion.setFromAxisAngle(yAxis,j5_rotate*(Math.PI/180))
     }
   }, [j5_rotate])
@@ -181,7 +187,7 @@ export default function Home() {
       set_j6_pos(j6_pos)
       set_j6_rot(j6_rot)
     }
-  },[target,j5_rotate])
+  },[target,j1_rotate,j2_rotate,j3_rotate,j4_rotate, j5_rotate])
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -263,7 +269,7 @@ export default function Home() {
           <a-camera id="camera" cursor="rayOrigin: mouse;" position="0 0 0"></a-camera>
         </a-entity>
         <a-sphere position={edit_pos(target)} scale="0.012 0.012 0.012" color="yellow" visible={true}></a-sphere>
-        <Cursor3dp pos={j1_pos} rot={j1_rot} visible={true}></Cursor3dp>
+        <Cursor3dp id="cj1" pos={j1_pos} rot={j1_rot} visible={true}></Cursor3dp>
         <Cursor3dp pos={j2_pos} rot={j2_rot} visible={true}></Cursor3dp>
         <Cursor3dp pos={j3_pos} rot={j3_rot} visible={true}></Cursor3dp>
         <Cursor3dp pos={j4_pos} rot={j4_rot} visible={true}></Cursor3dp>
@@ -313,7 +319,7 @@ const UR5e = (props)=>{
   const {visible, j1_rotate, j2_rotate, j3_rotate, j4_rotate, j5_rotate, j6_rotate} = props
   return (<>{visible?
     <a-entity robot-click gltf-model="#base" position="0 0 0" rotation="0 0 0" visible={visible}>
-      <a-entity j1 gltf-model="#j1" position="0 0 0">
+      <a-entity id="oj1" j1 gltf-model="#j1" position="0 0 0">
         <a-entity j2 gltf-model="#j2" position="0 0.1626 0">
           <a-entity j3 gltf-model="#j3" position="0 0.4251\ 0">
             <a-entity j4 gltf-model="#j4" position="0 0.3922 0">
@@ -362,13 +368,13 @@ const Select_Robot = (props)=>{
 }
 
 const Cursor3dp = (props) => {
-  const { pos={x:0,y:0,z:0}, rot={x:0,y:0,z:0}, len=0.5, opa=1, children, visible=false } = props;
+  const { id, pos={x:0,y:0,z:0}, rot={x:0,y:0,z:0}, len=0.5, opa=1, children, visible=false } = props;
 
   const line_x = `start: 0 0 0; end: ${len} 0 0; color: red; opacity: ${opa};`
   const line_y = `start: 0 0 0; end: 0 ${len} 0; color: green; opacity: ${opa};`
   const line_z = `start: 0 0 0; end: 0 0 ${len}; color: blue; opacity: ${opa};`
 
-  return <a-entity
+  return <a-entity id={id}
       line={line_x}
       line__1={line_y}
       line__2={line_z}
