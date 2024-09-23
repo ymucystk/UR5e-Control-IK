@@ -2,6 +2,9 @@
 import * as React from 'react'
 import Controller from './controller.js'
 
+import { mqttclient, connectMQTT, subscribe } from './mqtt_sync.js'
+import { VR_INFO_Camera, VR_Controller_Right, VR_mode_detector, add_vr_component } from './vr_controller.js';
+
 export default function Home() {
   const [now, setNow] = React.useState(new Date())
   const [rendered,set_rendered] = React.useState(false)
@@ -9,6 +12,18 @@ export default function Home() {
   const [robotName,set_robotName] = React.useState(robotNameList[0])
   const [cursor_vis,set_cursor_vis] = React.useState(true)
   const [box_vis,set_box_vis] = React.useState(true)
+
+  // for VR
+  const [trigger, set_trigger] = React.useState(false)
+  const [abutton, set_abutton] = React.useState(false)
+  const [bbutton, set_bbutton] = React.useState(false)
+  const [grip, set_grip] = React.useState(false)
+  const [vr_quartanion, set_vr_quartanion] = React.useState({})
+
+  // MQTT initial 
+  const [send_mq, set_send_mq] = React.useState(0)
+  const lastMQMsg = React.useRef(""); // 最後に送付したメッセージ（JSON文字列）
+  const lastMQTime = React.useRef(0); // 最後に送付した時刻
 
   const [j1_rotate,set_j1_rotate] = React.useState(0)
   const [j2_rotate,set_j2_rotate] = React.useState(0)
@@ -157,6 +172,10 @@ export default function Home() {
     if (j5_object !== undefined) {
       j5_object.quaternion.setFromAxisAngle(y_vec_base,j5_rotate*(Math.PI/180))
     }
+
+    // どうも、ここがIKの最後？
+    //
+    set_send_mq((i)=>i+1); // MQTT 送って！
   }, [j5_rotate])
 
   React.useEffect(() => {
@@ -533,9 +552,47 @@ export default function Home() {
             this.el.object3D.quaternion.copy(q)
           }
         });
+
+
+        console.log("Add vr components");
+        // ここから、VR 用の初期設定追加
+        add_vr_component(AFRAME, { set_target, set_grip, set_trigger, set_abutton, set_bbutton, set_vr_quartanion,set_send_mq });
+        VR_mode_detector(AFRAME, set_c_pos_y);
+
+        // mqtt
+        console.log("Connecting MQTT");
+        connectMQTT("UR5e", () => (0));
       }
     }
   }, [typeof window])
+  // ここから、MQTT 送信用のコード
+  React.useEffect(() => {
+    if (mqttclient != null) {
+      const dt = new Date().getTime()
+      if (dt - lastMQTime.current < 40) {// less than 40msec then skip
+        return
+      }
+      const newMsg = {
+        grip,
+        trigger,
+        abutton,
+        bbutton,
+        pos: target,
+        ori: vr_quartanion,
+        rotate: [j1_rotate, j2_rotate, j3_rotate, j4_rotate, j5_rotate],
+      }
+      const msg = JSON.stringify(newMsg)
+
+      if (msg == lastMQMsg.current) { // 同じであれば送らない
+        return
+      }
+      mqttclient.publish('urdemo/docker_ur5e', msg);
+      lastMQMsg.current = msg
+
+    } else {
+      //      console.log("MQTT ", mqttclient);
+    }
+  }, [send_mq]);
 
   const edit_pos = (posxyz)=>`${posxyz.x} ${posxyz.y} ${posxyz.z}`
 
@@ -558,7 +615,7 @@ export default function Home() {
   if(rendered){
     return (
     <>
-      <a-scene>
+      <a-scene xr-mode-ui="enterAREnabled: true; XRMode: xr" vr-mode-detector>
         <a-plane position="0 0 0" rotation="-90 0 0" width="10" height="10" color="#7BC8A4"></a-plane>
         <Assets/>
         <Select_Robot {...robotProps}/>
@@ -571,6 +628,8 @@ export default function Home() {
         <a-entity id="rig" position={`${c_pos_x} ${c_pos_y} ${c_pos_z}`} rotation={`${c_deg_x} ${c_deg_y} ${c_deg_z}`}>
           <a-camera id="camera" cursor="rayOrigin: mouse;" position="0 0 0"></a-camera>
         </a-entity>
+        <a-entity id="ctlR" laser-controls="hand: right" raycaster="showLine: true" vr-ctrl-listener="hand: right"></a-entity>
+
         <a-sphere position={edit_pos(target)} scale="0.012 0.012 0.012" color="yellow" visible={true}></a-sphere>
         {/*<a-box position={edit_pos(target13)} scale="0.03 0.03 0.03" color="blue" visible={box_vis}></a-box>*/}
         <a-box position={edit_pos(target14)} scale="0.03 0.03 0.03" color="blue" visible={box_vis}></a-box>
