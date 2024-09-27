@@ -4,7 +4,7 @@ import "./controller.css";
 
 export default function Controller(props) {
   const {toolNameList, toolName} = props
-  const {target, target13, target14} = props
+  const {target, target14} = props
   const {j1_rotate, j2_rotate, j3_rotate, j4_rotate, j5_rotate, j6_rotate, j7_rotate} = props
   const {c_pos_x, c_pos_y, c_pos_z} = props
   const {c_deg_x, c_deg_y, c_deg_z} = props
@@ -129,20 +129,6 @@ export default function Controller(props) {
   }
 
   /*
-  const set_target2_x = (e)=>{
-    const value = Number.parseFloat(e.target.value)
-    props.set_target13({...target13,x:value||0})
-  }
-  const set_target2_y = (e)=>{
-    const value = Number.parseFloat(e.target.value)
-    props.set_target13({...target13,y:value||0})
-  }
-  const set_target2_z = (e)=>{
-    const value = Number.parseFloat(e.target.value)
-    props.set_target13({...target13,z:value||0})
-  }
-  */
-
   const set_target3_x = (e)=>{
     const value = Number.parseFloat(e.target.value)
     props.set_target14({...target14,x:value||0})
@@ -155,6 +141,7 @@ export default function Controller(props) {
     const value = Number.parseFloat(e.target.value)
     props.set_target14({...target14,z:value||0})
   }
+    */
 
   return (
     <>
@@ -241,33 +228,17 @@ export default function Controller(props) {
         <span>TARGET</span>
         <div className="row mb-0">
           <div className="col-md-4"><label htmlFor="target_x_number" className="form-label"><span className="form-control-plaintext">target x</span></label></div>
-          <div className="col-md-8"><input type="number" className="form-control" id="target_x_number" value={target.x} onChange={set_target_x} step={0.01} min={-10} max={10}/></div>
+          <div className="col-md-8"><input type="number" className="form-control" id="target_x_number" value={target.x} onChange={set_target_x} step={0.002} min={-10} max={10}/></div>
         </div>
         <div className="row mb-0">
           <div className="col-md-4"><label htmlFor="target_y_number" className="form-label"><span className="form-control-plaintext">target y</span></label></div>
-          <div className="col-md-8"><input type="number" className="form-control" id="target_y_number" value={target.y} onChange={set_target_y} step={0.01} min={-10} max={10}/></div>
+          <div className="col-md-8"><input type="number" className="form-control" id="target_y_number" value={target.y} onChange={set_target_y} step={0.002} min={-10} max={10}/></div>
         </div>
         <div className="row mb-2">
           <div className="col-md-4"><label htmlFor="target_z_number" className="form-label"><span className="form-control-plaintext">target z</span></label></div>
-          <div className="col-md-8"><input type="number" className="form-control" id="target_z_number" value={target.z} onChange={set_target_z} step={0.01} min={-10} max={10}/></div>
+          <div className="col-md-8"><input type="number" className="form-control" id="target_z_number" value={target.z} onChange={set_target_z} step={0.002} min={-10} max={10}/></div>
         </div>
         {/*<div className="row mb-2">
-        </div>*/}
-
-        {/*<span>TARGET13</span>
-        <div className="row mb-2">
-          <div className="col-md-4"><label htmlFor="target2_x_number" className="form-label"><span className="form-control-plaintext">target13 x</span></label></div>
-          <div className="col-md-8"><input type="number" className="form-control" id="target2_x_number" value={target13.x} onChange={set_target2_x} step={0.01} min={-10} max={10}/></div>
-        </div>
-        <div className="row mb-2">
-          <div className="col-md-4"><label htmlFor="target2_y_number" className="form-label"><span className="form-control-plaintext">target13 y</span></label></div>
-          <div className="col-md-8"><input type="number" className="form-control" id="target2_y_number" value={target13.y} onChange={set_target2_y} step={0.01} min={-10} max={10}/></div>
-        </div>
-        <div className="row mb-2">
-          <div className="col-md-4"><label htmlFor="target2_z_number" className="form-label"><span className="form-control-plaintext">target13 z</span></label></div>
-          <div className="col-md-8"><input type="number" className="form-control" id="target2_z_number" value={target13.z} onChange={set_target2_z} step={0.01} min={-10} max={10}/></div>
-        </div>
-        <div className="row mb-4">
         </div>*/}
 
         {/*<span>TARGET14</span>
