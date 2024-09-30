@@ -85,12 +85,6 @@ export default function Home() {
     y:(joint_pos.j2.y+joint_pos.j3.y+joint_pos.j4.y+joint_pos.j5.y),
     z:joint_pos.j7.z})*/
  
-  const [target14,set_target14] = React.useState({x:joint_pos.j5.x,
-    y:(joint_pos.j2.y+joint_pos.j3.y+joint_pos.j4.y),z:0})
-
-  const [target15,set_target15] = React.useState({x:joint_pos.j5.x,
-    y:(joint_pos.j2.y+joint_pos.j3.y+joint_pos.j4.y),z:0})
-
   const [p14_maxlen,set_p14_maxlen] = React.useState(0)
  
   React.useEffect(function() {
@@ -151,11 +145,11 @@ export default function Home() {
     if(rendered){
       const wkq = new THREE.Quaternion();
       const wkqwk = new THREE.Quaternion();
+      wkqwk.setFromAxisAngle(z_vec_base,wrist_rot_z*(Math.PI/180))
+      wkq.multiply(wkqwk)
       wkqwk.setFromAxisAngle(y_vec_base,wrist_rot_y*(Math.PI/180))
       wkq.multiply(wkqwk)
       wkqwk.setFromAxisAngle(x_vec_base,wrist_rot_x*(Math.PI/180))
-      wkq.multiply(wkqwk)
-      wkqwk.setFromAxisAngle(z_vec_base,wrist_rot_z*(Math.PI/180))
       wkq.multiply(wkqwk)
       p20_object.quaternion.copy(wkq)
     }
@@ -181,124 +175,96 @@ export default function Home() {
 
       const p15_16_offset_pos = {...p21_pos}
       const new_p15_pos = {x:(target.x - p15_16_offset_pos.x),y:(target.y - p15_16_offset_pos.y),z:(target.z - p15_16_offset_pos.z)}
-      set_target15(new_p15_pos)
+      target15_update(new_p15_pos,direction)
     }
   },[p21_pos.x,p21_pos.y,p21_pos.z,target])
 
-  React.useEffect(() => {
-    if(rendered){
-      const distance_center_t15 = round(distance({x:0,y:0,z:0},{x:target15.x,y:0,z:target15.z}))
-      const {k:kakudo_t15} = calc_side_4(distance_center_t15,joint_pos.j5.x)
+  const target15_update = (target15,direction)=>{
+    const distance_center_t15 = round(distance({x:0,y:0,z:0},{x:target15.x,y:0,z:target15.z}))
+    const {k:kakudo_t15} = calc_side_4(distance_center_t15,joint_pos.j5.x)
 
-      const dir_sign_t15 = target15.x < 0 ? -1 : 1
-      const xz_vector_t15 = new THREE.Vector3(target15.x,0,target15.z).normalize()
-      const direction_t15 = round((z_vec_base.angleTo(xz_vector_t15))*(180/Math.PI))*dir_sign_t15
-      if(isNaN(direction_t15)){
-        console.log("target15 指定可能範囲外！")
-        return
-      }
-      let wk_j1_rotate = round(direction_t15 - (90 - kakudo_t15))
-      wk_j1_rotate = wk_j1_rotate<-180?(180+(wk_j1_rotate+180)):wk_j1_rotate
-      set_j1_rotate(wk_j1_rotate)
-
-      const dir_sign1 = p21_pos.x < 0 ? -1 : 1
-      const xz_vector = new THREE.Vector3(p21_pos.x,0,p21_pos.z).normalize()
-      const direction = round((z_vec_base.angleTo(xz_vector))*(180/Math.PI))*dir_sign1
-      if(isNaN(direction)){
-        console.log("p21_pos 指定可能範囲外！")
-        return
-      }
-
-      if(wrist_rot_x === 0){
-        let direction_offset = direction - wk_j1_rotate
-        set_j5_rotate(direction_offset)
-        if(direction_offset > 90){
-          direction_offset = 90 - (direction_offset - 90)
-        }else
-        if(direction_offset < -90){
-          direction_offset = -90 - (direction_offset + 90)
-        }
-
-        const conf_direction = 85
-        const new_p14_pos = {...target15}
-        if(Math.abs(direction_offset) < conf_direction){
-          new_p14_pos.y -= joint_pos.j5.y
-          const wk_j4_rotate = round((j2_rotate + j3_rotate) * -1)
-          set_j4_rotate(wk_j4_rotate)
-    
-        }else{
-          const a = joint_pos.j5.y / ((90-conf_direction)**2)
-          const offset_distance = round(a*((Math.abs(direction_offset)-conf_direction)**2))
-          const {a:offset_z, b:offset_x} = calc_side_1(offset_distance,wk_j1_rotate)
-          const {k:kakudo, t:offset_y} = calc_side_4(joint_pos.j5.y,offset_distance)
-          new_p14_pos.x -= offset_x
-          new_p14_pos.y -= offset_distance===0?joint_pos.j5.y:offset_y
-          new_p14_pos.z -= offset_z
-          const wk_j4_rotate = round(((j2_rotate + j3_rotate) * -1) + (90 - kakudo))
-          set_j4_rotate(wk_j4_rotate)
-    
-          //console.log(`direction_offset:${Math.abs(direction_offset)}  offset_distance:${offset_distance}`)
-          //console.log(`direction_offset:${direction_offset}  wk_j1_rotate:${wk_j1_rotate}`)
-          //console.log(`offset_x:${offset_x}  offset_z:${offset_z}`)
-          //console.log(`new_p14_pos:{x:${new_p14_pos.x}, y:${new_p14_pos.y}, z:${new_p14_pos.z}}`)
-        }
-  
-        target14_update(new_p14_pos)
-      }else
-      if(Math.abs(wrist_rot_x) === 90){
-        if(wrist_rot_x < 0){
-          set_j5_rotate(180)
-        }else{
-          set_j5_rotate(0)
-        }
-        const wk_j4_rotate = round(((j2_rotate + j3_rotate) * -1) + 90)
-        set_j4_rotate(wk_j4_rotate)
-
-        const new_p14_pos = {...target15}
-        const offset_distance = joint_pos.j5.y
-        const {a:offset_z, b:offset_x} = calc_side_1(offset_distance,wk_j1_rotate)
-        new_p14_pos.x -= offset_x
-        new_p14_pos.z -= offset_z
-        target14_update(new_p14_pos)
-      }else{
-        const direction_offset = direction - wk_j1_rotate
-        const distance_target_t15 = round(distance({x:target.x,y:0,z:target.z},{x:target15.x,y:0,z:target15.z}))
-        const elevation_target_t15 =  target15.y - target.y
-        const {a:teihen} = calc_side_1(distance_target_t15,direction_offset)
-        const {s:syahen,k:kakudo} = calc_side_2(teihen, elevation_target_t15)
-        const wk_j4_rotate = round(((j2_rotate + j3_rotate) * -1) + (90 - kakudo))
-        set_j4_rotate(wk_j4_rotate)
-
-        const distance_target_t15_2 = round(distance(target,target15))
-        const {k:wk_j5_rotate} = calc_side_4(distance_target_t15_2,syahen)
-
-
-        //console.log(`kakudo:${(90 - kakudo)}`)
-        const {a:p14_offset_y,b:p14_offset_distance} = calc_side_1(joint_pos.j5.y,(90 - kakudo))
-        const {a:p14_offset_z,b:p14_offset_x} = calc_side_1(p14_offset_distance,wk_j1_rotate)
-
-        const {a:wk_z,b:wk_x} = calc_side_1(teihen,wk_j1_rotate)
-        const dir_sign = wk_z < 0 ? -1 : 1
-        const base_vector = new THREE.Vector3(wk_x,elevation_target_t15,wk_z).normalize()
-        const rotation_vector = new THREE.Vector3(target.x-target15.x,target.y-target15.y,target.z-target15.z).normalize()
-        //const wk_j5_rotate = round((base_vector.angleTo(rotation_vector))*(180/Math.PI))*dir_sign
-        //const wk_j5_rotate = round((wk_j1_rotate * -1) + wrist_rot_y)
-        console.log(`wk_j5_rotate:${wk_j5_rotate*(direction_offset<0?-1:1)}`)
-        set_j5_rotate(wk_j5_rotate*(direction_offset<0?-1:1))
-
-        //const new_p14_pos = {x:(target15.x + p15_14_offset_pos.x),y:(target15.y + p15_14_offset_pos.y),z:(target15.z + p15_14_offset_pos.z)}
-        const new_p14_pos = {...target15}
-        new_p14_pos.x -= p14_offset_x
-        new_p14_pos.y -= p14_offset_y
-        new_p14_pos.z -= p14_offset_z
-        target14_update(new_p14_pos)
-      }
+    const dir_sign_t15 = target15.x < 0 ? -1 : 1
+    const xz_vector_t15 = new THREE.Vector3(target15.x,0,target15.z).normalize()
+    const direction_t15 = round((z_vec_base.angleTo(xz_vector_t15))*(180/Math.PI))*dir_sign_t15
+    if(isNaN(direction_t15)){
+      console.log("target15 指定可能範囲外！")
+      return
     }
-  },[target15])
+    let wk_j1_rotate = round(direction_t15 - (90 - kakudo_t15))
+    wk_j1_rotate = wk_j1_rotate<-180?(180+(wk_j1_rotate+180)):wk_j1_rotate
+    set_j1_rotate(wk_j1_rotate)
+
+    const direction_offset = normalize180(direction - wk_j1_rotate)
+    const distance_target_t15 = round(distance({x:target.x,y:0,z:target.z},{x:target15.x,y:0,z:target15.z}))
+    const elevation_target_t15 =  target15.y - target.y
+    const {a:teihen} = calc_side_1(distance_target_t15,direction_offset)
+    const {s:syahen,k:kakudo} = calc_side_2(teihen, elevation_target_t15)
+    const wk_j4_rotate = normalize180(round(((j2_rotate + j3_rotate) * -1) + (90 - kakudo)))
+    set_j4_rotate(wk_j4_rotate)
+
+    const distance_target_t15_2 = round(distance(target,target15))
+    const {k:wk_j5_rotate} = calc_side_4(distance_target_t15_2,syahen)
+
+    const {a:p14_offset_y,b:p14_offset_distance} = calc_side_1(joint_pos.j5.y,(90 - kakudo))
+    const {a:p14_offset_z,b:p14_offset_x} = calc_side_1(p14_offset_distance,wk_j1_rotate)
+
+    set_j5_rotate(normalize180(wk_j5_rotate*(direction_offset<0?-1:1)))
+
+    const new_p14_pos = {...target15}
+    new_p14_pos.x -= p14_offset_x
+    new_p14_pos.y -= p14_offset_y
+    new_p14_pos.z -= p14_offset_z
+    target14_update(new_p14_pos)
+  }
+
+  const target14_update = (target14)=>{
+    const syahen_t14 = round(distance({x:0,y:0,z:0},{x:target14.x,y:0,z:target14.z}))
+    const takasa_t14 = round(distance(joint_pos.j2,{x:0,y:target14.y,z:0}))
+    const {t:teihen_t14} = calc_side_4(syahen_t14,joint_pos.j5.x)
+    const {s:side_c,k:angle_base} = calc_side_2(teihen_t14,takasa_t14)
+
+    const side_a = joint_pos.j3.y
+    const side_b = joint_pos.j4.y
+    const max_dis = side_a + side_b
+    const min_dis = Math.abs(joint_pos.j3.y - joint_pos.j4.y)
+
+    if(min_dis > side_c){
+      set_j2_rotate(angle_base)
+      set_j3_rotate(180)
+    }else
+    if(side_c >= max_dis){
+      set_j2_rotate(angle_base)
+      set_j3_rotate(0)
+    }else{
+      let angle_B = Math.acos((side_a ** 2 + side_c ** 2 - side_b ** 2) / (2 * side_a * side_c))*180/Math.PI
+      let angle_C = Math.acos((side_a ** 2 + side_b ** 2 - side_c ** 2) / (2 * side_a * side_b))*180/Math.PI
+
+      if(isNaN(angle_B)) angle_B = 0
+      if(isNaN(angle_C)) angle_C = 0
+
+      const angle_j2 = normalize180(round(angle_base - angle_B))
+      const angle_j3 = normalize180(round(angle_C === 0 ? 0 : 180 - angle_C))
+
+      set_j2_rotate(angle_j2)
+      set_j3_rotate(angle_j3)
+    }
+  }
 
   const round = (x,d=5)=>{
     const v = 10 ** (d|0)
     return Math.round(x*v)/v
+  }
+
+  const normalize180 = (angle)=>{
+    if(Math.abs(angle) <= 180){
+      return angle
+    }
+    const amari = angle % 180
+    if(amari < 0){
+      return (180 + amari)
+    }else{
+      return (-180 + amari)
+    }
   }
 
   const getposq = (parts_obj)=>{
@@ -316,26 +282,26 @@ export default function Home() {
   }
 
   const distance = (s_pos, t_pos)=>{
-    return Math.sqrt((t_pos.x - s_pos.x) ** 2 + (t_pos.y - s_pos.y) ** 2 + (t_pos.z - s_pos.z) ** 2);
+    return round(Math.sqrt((t_pos.x - s_pos.x) ** 2 + (t_pos.y - s_pos.y) ** 2 + (t_pos.z - s_pos.z) ** 2))
   }
 
   const calc_side_1 = (syahen, kakudo)=>{
-    const teihen = Math.abs(kakudo)===90  ? 0:(syahen * Math.cos(kakudo/180*Math.PI))
-    const takasa = Math.abs(kakudo)===180 ? 0:(syahen * Math.sin(kakudo/180*Math.PI))
-    return {a:round(teihen), b:round(takasa)}
+    const teihen = round(Math.abs(kakudo)===90  ? 0:(syahen * Math.cos(kakudo/180*Math.PI)))
+    const takasa = round(Math.abs(kakudo)===180 ? 0:(syahen * Math.sin(kakudo/180*Math.PI)))
+    return {a:teihen, b:takasa}
   }
 
   const calc_side_2 = (teihen, takasa)=>{
-    const syahen = Math.sqrt(teihen ** 2 + takasa ** 2)
-    const kakudo = round(Math.atan2(teihen, takasa)*180/Math.PI)
-    return {s:round(syahen), k:round(kakudo)}
+    const syahen = round(Math.sqrt(teihen ** 2 + takasa ** 2))
+    const kakudo = normalize180(round(Math.atan2(teihen, takasa)*180/Math.PI))
+    return {s:syahen, k:kakudo}
   }
 
   const calc_side_4 = (syahen, teihen)=>{
     const wk_rad = Math.acos(teihen / syahen)
-    const takasa = teihen * Math.tan(wk_rad)
-    const kakudo = round(wk_rad*180/Math.PI)
-    return {k:round(kakudo), t:round(takasa)}
+    const takasa = round(teihen * Math.tan(wk_rad))
+    const kakudo = normalize180(round(wk_rad*180/Math.PI))
+    return {k:kakudo, t:takasa}
   }
 
   const calc_pos = (hankei, angle, direction)=>{
@@ -388,74 +354,6 @@ export default function Home() {
       })
     }
   },[now])
-
-  const target13_update = (target13)=>{
-    const y_vector = new THREE.Vector3(target13.x,(target13.y-joint_pos.j2.y),target13.z).normalize()
-    const angle_base = round((y_vec_base.angleTo(y_vector))*(180/Math.PI))
-
-    const side_a = joint_pos.j3.y
-    const side_b = joint_pos.j4.y
-    const side_c = distance(p11_pos,target13)
-    const max_dis = side_a + side_b
-    const min_dis = Math.abs(joint_pos.j3.y - joint_pos.j4.y)
-
-    if(min_dis > side_c){
-      set_j2_rotate(angle_base)
-      set_j3_rotate(180)
-    }else
-    if(side_c >= max_dis){
-      set_j2_rotate(angle_base)
-      set_j3_rotate(0)
-    }else{
-      let angle_B = Math.acos((side_a ** 2 + side_c ** 2 - side_b ** 2) / (2 * side_a * side_c))*180/Math.PI
-      let angle_C = Math.acos((side_a ** 2 + side_b ** 2 - side_c ** 2) / (2 * side_a * side_b))*180/Math.PI
-
-      if(isNaN(angle_B)) angle_B = 0
-      if(isNaN(angle_C)) angle_C = 0
-
-      const angle_j2 = round(angle_base - angle_B)
-      const angle_j3 = round(angle_C === 0 ? 0 : 180 - angle_C)
-
-      set_j2_rotate(angle_j2)
-      set_j3_rotate(angle_j3)
-    }
-  }
-
-  const target14_update = (target14)=>{
-    const dir_sign_t = target14.x < 0 ? -1 : 1
-    const xz_vector_t = new THREE.Vector3(target14.x,0,target14.z).normalize()
-    const direction_t = z_vec_base.angleTo(xz_vector_t)*dir_sign_t
-
-    const y_vector_t = new THREE.Vector3(target14.x,(target14.y-joint_pos.j2.y),target14.z).normalize()
-    const angle_base_t = y_vec_base.angleTo(y_vector_t)
-
-    const t14_distance = distance(p11_pos,target14)
-    const p14_distance = Math.min(p14_maxlen,t14_distance)
-
-    const wk_p14pos = calc_pos(p14_distance,angle_base_t*(180/Math.PI),direction_t*(180/Math.PI))
-
-    const dir_sign_p = p14_pos.x < 0 ? -1 : 1
-    const xz_vector_p = new THREE.Vector3(p14_pos.x,0,p14_pos.z).normalize()
-    const direction_p = z_vec_base.angleTo(xz_vector_p)*dir_sign_p
-
-    const direction_addvalue = direction_t - direction_p
-
-    const dir_sign_p13 = p13_pos.x < 0 ? -1 : 1
-    const xz_vector_p13 = new THREE.Vector3(p13_pos.x,0,p13_pos.z)
-    const direction_p13 = z_vec_base.angleTo(xz_vector_p13.normalize())*dir_sign_p13
-    const {t:p13_distance} = calc_side_4(p14_distance, joint_pos.j5.x)
-    const {k:p13_angle} = calc_side_4(p13_distance, wk_p14pos.y)
-    const wk_p13pos = calc_pos(p13_distance, p13_angle, round((direction_p13 + direction_addvalue)*(180/Math.PI)))
-    wk_p13pos.y += p11_pos.y
-
-    target13_update(wk_p13pos)
-  }
-
-  React.useEffect(() => {
-    if(rendered){
-      target14_update(target14)
-    }
-  },[target14])
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -557,7 +455,7 @@ export default function Home() {
 
   const controllerProps = {
     robotName, robotNameList, set_robotName,
-    target, set_target, target14,set_target14,
+    target, set_target,
     toolName, toolNameList, set_toolName,
     j1_rotate,set_j1_rotate,j2_rotate,set_j2_rotate,j3_rotate,set_j3_rotate,
     j4_rotate,set_j4_rotate,j5_rotate,set_j5_rotate,j6_rotate,set_j6_rotate,j7_rotate,set_j7_rotate,
@@ -588,7 +486,6 @@ export default function Home() {
           <a-camera id="camera" cursor="rayOrigin: mouse;" position="0 0 0"></a-camera>
         </a-entity>
         <a-sphere position={edit_pos(target)} scale="0.012 0.012 0.012" color="yellow" visible={true}></a-sphere>
-        <a-box position={edit_pos(target14)} scale="0.03 0.03 0.03" color="blue" visible={box_vis}></a-box>
         <a-box position={edit_pos(test_pos)} scale="0.03 0.03 0.03" color="green" visible={box_vis}></a-box>
         <Line pos1={p11_pos} pos2={p12_pos} visible={cursor_vis}></Line>
         <Line pos1={p12_pos} pos2={p13_pos} visible={cursor_vis}></Line>
@@ -732,71 +629,3 @@ const Line = (props) => {
       visible={visible}
   ></a-entity>
 }
-
-/*
-const wkq = new THREE.Quaternion();
-const j1_wkq = new THREE.Quaternion();
-j1_wkq.copy(j1_object.quaternion).normalize()
-const j2_wkq = new THREE.Quaternion();
-j2_wkq.copy(j2_object.quaternion).normalize()
-const j3_wkq = new THREE.Quaternion();
-j3_wkq.copy(j3_object.quaternion).normalize()
-const j4_wkq = new THREE.Quaternion();
-j4_wkq.copy(j4_object.quaternion).normalize()
-const j5_wkq = new THREE.Quaternion();
-j5_wkq.copy(j5_object.quaternion).normalize()
-
-wkq.multiply(j1_wkq).normalize()
-wkq.multiply(j2_wkq).normalize()
-wkq.multiply(j3_wkq).normalize()
-
-//      console.log(`wkq(3) {x:${round(wkq.x)},y:${round(wkq.y)},z:${round(wkq.z)},w:${round(wkq.w)}}`)
-
-wkq.multiply(j4_wkq).normalize()
-
-//      console.log(`wkq(4) {x:${round(wkq.x)},y:${round(wkq.y)},z:${round(wkq.z)},w:${round(wkq.w)}}`)
-
-wkq.multiply(j5_wkq).normalize()
-
-const wkq3 = new THREE.Quaternion();
-const wkq3wk = new THREE.Quaternion();
-wkq3.copy(wkq)
-wkq3wk.copy(j5_wkq).invert()
-wkq3.multiply(wkq3wk)
-console.log(`wkq3(4) {x:${round(wkq3.x)},y:${round(wkq3.y)},z:${round(wkq3.z)},w:${round(wkq3.w)}}`)
-
-wkq3wk.copy(j4_wkq).invert()
-wkq3.multiply(wkq3wk)
-console.log(`wkq3(3) {x:${round(wkq3.x)},y:${round(wkq3.y)},z:${round(wkq3.z)},w:${round(wkq3.w)}}`)
-
-
-
-const test_result4 = getposq(j4_object)
-const wkq2_4 = test_result4.quaternion
-console.log(`wkq2_4 {x:${round(wkq2_4.x)},y:${round(wkq2_4.y)},z:${round(wkq2_4.z)},w:${round(wkq2_4.w)}}`)
-const wkq9_4 = new THREE.Quaternion();
-wkq9_4.copy(wkq2_4)
-
-
-const test_result3 = getposq(j3_object)
-const wkq2_3 = test_result3.quaternion
-console.log(`wkq2_3 {x:${round(wkq2_3.x)},y:${round(wkq2_3.y)},z:${round(wkq2_3.z)},w:${round(wkq2_3.w)}}`)
-const wkq9_3 = new THREE.Quaternion();
-wkq9_3.copy(wkq2_3).invert()
-
-wkq9_4.multiply(wkq9_3)
-console.log(`wkq9_4 {x:${round(wkq9_4.x)},y:${round(wkq9_4.y)},z:${round(wkq9_4.z)},w:${round(wkq9_4.w)}}`)
-
-
-//p11_object.quaternion.copy(j5_result.quaternion) // ******************************************
-//const box_result = getposq(p11_object)
-//console.log(`\nj5  x:${j5_result.quaternion.x} y:${j5_result.quaternion.y} z:${j5_result.quaternion.z} w:${j5_result.quaternion.w}`)
-//console.log(`box x:${box_result.quaternion.x} y:${box_result.quaternion.y} z:${box_result.quaternion.z} w:${box_result.quaternion.w}`)
-
-//const wkq = j5_result.quaternion
-//const wkqwkq = new THREE.Quaternion(wkq.x/wkq.w,wkq.y/wkq.w,wkq.z/wkq.w,wkq.w/wkq.w).normalize();
-//const wkqwkq = new THREE.Quaternion(wkq.x,wkq.y,wkq.z,wkq.w).normalize();
-
-const j6_wkq = new THREE.Quaternion();
-j6_wkq.multiplyQuaternions(j6_object.quaternion,j5_wkq).normalize()
-*/
