@@ -7,8 +7,8 @@ export default function Home() {
   const [rendered,set_rendered] = React.useState(false)
   const robotNameList = ["UR5e"]
   const [robotName,set_robotName] = React.useState(robotNameList[0])
-  const [cursor_vis,set_cursor_vis] = React.useState(true)
-  const [box_vis,set_box_vis] = React.useState(true)
+  const [cursor_vis,set_cursor_vis] = React.useState(false)
+  const [box_vis,set_box_vis] = React.useState(false)
 
   const [j1_rotate,set_j1_rotate] = React.useState(0)
   const [j2_rotate,set_j2_rotate] = React.useState(0)
@@ -35,15 +35,9 @@ export default function Home() {
   const [p21_object,set_p21_object] = React.useState()
   const [p22_object,set_p22_object] = React.useState()
 
-  const [p11_pos,set_p11_pos] = React.useState({x:0,y:0,z:0})
-  const [p12_pos,set_p12_pos] = React.useState({x:0,y:0,z:0})
-  const [p13_pos,set_p13_pos] = React.useState({x:0,y:0,z:0})
-  const [p14_pos,set_p14_pos] = React.useState({x:0,y:0,z:0})
   const [p15_pos,set_p15_pos] = React.useState({x:0,y:0,z:0})
   const [p16_pos,set_p16_pos] = React.useState({x:0,y:0,z:0})
-  const [p20_pos,set_p20_pos] = React.useState({x:0,y:0,z:0})
   const [p21_pos,set_p21_pos] = React.useState({x:0,y:0,z:0})
-  const [p22_pos,set_p22_pos] = React.useState({x:0,y:0,z:0})
 
   const [test_pos,set_test_pos] = React.useState({x:0,y:0,z:0})
 
@@ -57,6 +51,7 @@ export default function Home() {
   const [wrist_rot_x,set_wrist_rot_x] = React.useState(0)
   const [wrist_rot_y,set_wrist_rot_y] = React.useState(0)
   const [wrist_rot_z,set_wrist_rot_z] = React.useState(0)
+  const [tool_rotate,set_tool_rotate] = React.useState(0)
   const [wrist_degree,set_wrist_degree] = React.useState({direction:0,angle:0})
   const [p15_16_len,set_p15_16_len] = React.useState(1)
 
@@ -107,37 +102,37 @@ export default function Home() {
 
   React.useEffect(() => {
     if (j1_object !== undefined) {
-      j1_object.quaternion.setFromAxisAngle(y_vec_base,j1_rotate*(Math.PI/180))
+      j1_object.quaternion.setFromAxisAngle(y_vec_base,toRadian(j1_rotate))
     }
   }, [j1_rotate])
 
   React.useEffect(() => {
     if (j2_object !== undefined) {
-      j2_object.quaternion.setFromAxisAngle(x_vec_base,j2_rotate*(Math.PI/180))
+      j2_object.quaternion.setFromAxisAngle(x_vec_base,toRadian(j2_rotate))
     }
   }, [j2_rotate])
 
   React.useEffect(() => {
     if (j3_object !== undefined) {
-      j3_object.quaternion.setFromAxisAngle(x_vec_base,j3_rotate*(Math.PI/180))
+      j3_object.quaternion.setFromAxisAngle(x_vec_base,toRadian(j3_rotate))
     }
   }, [j3_rotate])
 
   React.useEffect(() => {
     if (j4_object !== undefined) {
-      j4_object.quaternion.setFromAxisAngle(x_vec_base,j4_rotate*(Math.PI/180))
+      j4_object.quaternion.setFromAxisAngle(x_vec_base,toRadian(j4_rotate))
     }
   }, [j4_rotate])
 
   React.useEffect(() => {
     if (j5_object !== undefined) {
-      j5_object.quaternion.setFromAxisAngle(y_vec_base,j5_rotate*(Math.PI/180))
+      j5_object.quaternion.setFromAxisAngle(y_vec_base,toRadian(j5_rotate))
     }
   }, [j5_rotate])
 
   React.useEffect(() => {
     if (j6_object !== undefined) {
-      j6_object.quaternion.setFromAxisAngle(z_vec_base,j6_rotate*(Math.PI/180))
+      j6_object.quaternion.setFromAxisAngle(z_vec_base,toRadian(j6_rotate))
     }
   }, [j6_rotate])
 
@@ -145,11 +140,11 @@ export default function Home() {
     if(rendered){
       const wkq = new THREE.Quaternion();
       const wkqwk = new THREE.Quaternion();
-      wkqwk.setFromAxisAngle(z_vec_base,wrist_rot_z*(Math.PI/180))
+      wkqwk.setFromAxisAngle(z_vec_base,toRadian(wrist_rot_z))
       wkq.multiply(wkqwk)
-      wkqwk.setFromAxisAngle(y_vec_base,wrist_rot_y*(Math.PI/180))
+      wkqwk.setFromAxisAngle(y_vec_base,toRadian(wrist_rot_y))
       wkq.multiply(wkqwk)
-      wkqwk.setFromAxisAngle(x_vec_base,wrist_rot_x*(Math.PI/180))
+      wkqwk.setFromAxisAngle(x_vec_base,toRadian(wrist_rot_x))
       wkq.multiply(wkqwk)
       p20_object.quaternion.copy(wkq)
     }
@@ -157,71 +152,115 @@ export default function Home() {
 
   React.useEffect(() => {
     if(rendered){
-      const dir_sign1 = p21_pos.x < 0 ? -1 : 1
-      const xz_vector = new THREE.Vector3(p21_pos.x,0,p21_pos.z).normalize()
-      const direction = round((z_vec_base.angleTo(xz_vector))*(180/Math.PI))*dir_sign1
-      if(isNaN(direction)){
-        console.log("p21_pos 指定可能範囲外！")
-        return
-      }
-      const dir_sign2 = p21_pos.z < 0 ? -1 : 1
-      const y_vector = new THREE.Vector3(p21_pos.x,p21_pos.y,p21_pos.z).normalize()
-      const angle = round((y_vec_base.angleTo(y_vector))*(180/Math.PI))*dir_sign2
-      if(isNaN(angle)){
-        console.log("p21_pos 指定可能範囲外！")
-        return
-      }
-      set_wrist_degree({direction,angle})
-
-      const p15_16_offset_pos = {...p21_pos}
-      const new_p15_pos = {x:(target.x - p15_16_offset_pos.x),y:(target.y - p15_16_offset_pos.y),z:(target.z - p15_16_offset_pos.z)}
-      target15_update(new_p15_pos,direction)
+      target_update(false)
     }
-  },[p21_pos.x,p21_pos.y,p21_pos.z,target])
+  },[p21_pos.x,p21_pos.y,p21_pos.z])
 
-  const target15_update = (target15,direction)=>{
+  React.useEffect(() => {
+    if(rendered){
+      target_update(true)
+    }
+  },[target,tool_rotate])
+
+  const target_update = (target_move)=>{
+    const dir_sign1 = p21_pos.x < 0 ? -1 : 1
+    const xz_vector = new THREE.Vector3(p21_pos.x,0,p21_pos.z).normalize()
+    const direction = round(toAngle(z_vec_base.angleTo(xz_vector)))*dir_sign1
+    if(isNaN(direction)){
+      console.log("p21_pos 指定可能範囲外！")
+      return
+    }
+    const dir_sign2 = p21_pos.z < 0 ? -1 : 1
+    const y_vector = new THREE.Vector3(p21_pos.x,p21_pos.y,p21_pos.z).normalize()
+    const angle = round(toAngle(y_vec_base.angleTo(y_vector)))*dir_sign2
+    if(isNaN(angle)){
+      console.log("p21_pos 指定可能範囲外！")
+      return
+    }
+    set_wrist_degree({direction,angle})
+
+    const p15_16_offset_pos = {...p21_pos}
+    const new_p15_pos = {x:(target.x - p15_16_offset_pos.x),y:(target.y - p15_16_offset_pos.y),z:(target.z - p15_16_offset_pos.z)}
+    target15_update(new_p15_pos,direction,angle,target_move)
+  }
+
+  const target15_update = (target15,wrist_direction,wrist_angle,target_move)=>{
     const distance_center_t15 = round(distance({x:0,y:0,z:0},{x:target15.x,y:0,z:target15.z}))
     const {k:kakudo_t15} = calc_side_4(distance_center_t15,joint_pos.j5.x)
 
     const dir_sign_t15 = target15.x < 0 ? -1 : 1
     const xz_vector_t15 = new THREE.Vector3(target15.x,0,target15.z).normalize()
-    const direction_t15 = round((z_vec_base.angleTo(xz_vector_t15))*(180/Math.PI))*dir_sign_t15
+    const direction_t15 = round(toAngle(z_vec_base.angleTo(xz_vector_t15)))*dir_sign_t15
     if(isNaN(direction_t15)){
       console.log("target15 指定可能範囲外！")
       return
     }
-    let wk_j1_rotate = round(direction_t15 - (90 - kakudo_t15))
-    wk_j1_rotate = wk_j1_rotate<-180?(180+(wk_j1_rotate+180)):wk_j1_rotate
-    set_j1_rotate(wk_j1_rotate)
+    let wk_j1_rotate = normalize180(round(direction_t15 - (90 - kakudo_t15)))
+    if(isNaN(wk_j1_rotate)){
+      console.log("wk_j1_rotate 指定可能範囲外！")
+      wk_j1_rotate = j1_rotate
+    }
 
-    const direction_offset = normalize180(direction - wk_j1_rotate)
+    const direction_offset = normalize180(wrist_direction - wk_j1_rotate)
     const distance_target_t15 = round(distance({x:target.x,y:0,z:target.z},{x:target15.x,y:0,z:target15.z}))
     const elevation_target_t15 =  target15.y - target.y
     const {a:teihen} = calc_side_1(distance_target_t15,direction_offset)
     const {s:syahen,k:kakudo} = calc_side_2(teihen, elevation_target_t15)
     const wk_j4_rotate = normalize180(round(((j2_rotate + j3_rotate) * -1) + (90 - kakudo)))
-    set_j4_rotate(wk_j4_rotate)
+    if(isNaN(wk_j4_rotate)){
+      console.log("wk_j4_rotate 指定可能範囲外！")
+    }else{
+      set_j4_rotate(wk_j4_rotate)
+    }
 
     const distance_target_t15_2 = round(distance(target,target15))
-    const {k:wk_j5_rotate} = calc_side_4(distance_target_t15_2,syahen)
+    const {k:wk_j5_kakudo} = calc_side_4(distance_target_t15_2,syahen)
 
     const {a:p14_offset_y,b:p14_offset_distance} = calc_side_1(joint_pos.j5.y,(90 - kakudo))
     const {a:p14_offset_z,b:p14_offset_x} = calc_side_1(p14_offset_distance,wk_j1_rotate)
+    const wk_j5_rotate = normalize180(wk_j5_kakudo*(direction_offset<0?-1:1))
+    if(isNaN(wk_j5_rotate)){
+      console.log("wk_j5_rotate 指定可能範囲外！")
+    }else{
+      set_j5_rotate(wk_j5_rotate)
+    }
 
-    set_j5_rotate(normalize180(wk_j5_rotate*(direction_offset<0?-1:1)))
+    const {a:wk_teihen} = calc_side_1(p14_offset_distance,direction_offset)
+    const {s:wk_syahen} = calc_side_2(wk_teihen,p14_offset_y)
+    let {k:wk_j6_zero_angle} = calc_side_4(joint_pos.j5.y,wk_syahen)
+    if(isNaN(wk_j6_zero_angle)){
+      console.log("j6_zero_angle 指定可能範囲外！")
+      wk_j6_zero_angle = j6_rotate
+    }
+    if(Math.abs(direction_offset) >= 90){
+      wk_j6_zero_angle = 90 + (90 - wk_j6_zero_angle)
+    }
+    const j6_zero_angle = wk_j6_zero_angle*(direction_offset<0?1:-1)
+    if(target_move){
+      set_j6_rotate(normalize180(j6_zero_angle + tool_rotate))
+    }else{
+      set_tool_rotate(normalize180(j6_rotate - j6_zero_angle))
+    }
 
-    const new_p14_pos = {...target15}
-    new_p14_pos.x -= p14_offset_x
-    new_p14_pos.y -= p14_offset_y
-    new_p14_pos.z -= p14_offset_z
-    target14_update(new_p14_pos)
-  }
+    const target14 = {...target15}
+    target14.x -= p14_offset_x
+    target14.y -= p14_offset_y
+    target14.z -= p14_offset_z
 
-  const target14_update = (target14)=>{
     const syahen_t14 = round(distance({x:0,y:0,z:0},{x:target14.x,y:0,z:target14.z}))
+    if(syahen_t14 < joint_pos.j5.x){
+      console.log("p14 指定可能範囲外！")
+      return
+    }
+    set_j1_rotate(wk_j1_rotate)
+
     const takasa_t14 = round(distance(joint_pos.j2,{x:0,y:target14.y,z:0}))
     const {t:teihen_t14} = calc_side_4(syahen_t14,joint_pos.j5.x)
     const {s:side_c,k:angle_base} = calc_side_2(teihen_t14,takasa_t14)
+    if(isNaN(angle_base)){
+      console.log("angle_base 指定可能範囲外！")
+      return
+    }
 
     const side_a = joint_pos.j3.y
     const side_b = joint_pos.j4.y
@@ -236,17 +275,24 @@ export default function Home() {
       set_j2_rotate(angle_base)
       set_j3_rotate(0)
     }else{
-      let angle_B = Math.acos((side_a ** 2 + side_c ** 2 - side_b ** 2) / (2 * side_a * side_c))*180/Math.PI
-      let angle_C = Math.acos((side_a ** 2 + side_b ** 2 - side_c ** 2) / (2 * side_a * side_b))*180/Math.PI
+      let angle_B = toAngle(Math.acos((side_a ** 2 + side_c ** 2 - side_b ** 2) / (2 * side_a * side_c)))
+      let angle_C = toAngle(Math.acos((side_a ** 2 + side_b ** 2 - side_c ** 2) / (2 * side_a * side_b)))
 
       if(isNaN(angle_B)) angle_B = 0
       if(isNaN(angle_C)) angle_C = 0
 
       const angle_j2 = normalize180(round(angle_base - angle_B))
       const angle_j3 = normalize180(round(angle_C === 0 ? 0 : 180 - angle_C))
-
-      set_j2_rotate(angle_j2)
-      set_j3_rotate(angle_j3)
+      if(isNaN(angle_j2)){
+        console.log("angle_j2 指定可能範囲外！")
+      }else{
+        set_j2_rotate(angle_j2)
+      }
+      if(isNaN(angle_j3)){
+        console.log("angle_j3 指定可能範囲外！")
+      }else{
+        set_j3_rotate(angle_j3)
+      }
     }
   }
 
@@ -265,6 +311,14 @@ export default function Home() {
     }else{
       return (-180 + amari)
     }
+  }
+
+  const toAngle = (radian)=>{
+    return normalize180(radian*(180/Math.PI))
+  }
+
+  const toRadian = (angle)=>{
+    return normalize180(angle)*(Math.PI/180)
   }
 
   const getposq = (parts_obj)=>{
@@ -286,48 +340,26 @@ export default function Home() {
   }
 
   const calc_side_1 = (syahen, kakudo)=>{
-    const teihen = round(Math.abs(kakudo)===90  ? 0:(syahen * Math.cos(kakudo/180*Math.PI)))
-    const takasa = round(Math.abs(kakudo)===180 ? 0:(syahen * Math.sin(kakudo/180*Math.PI)))
+    const teihen = round(Math.abs(kakudo)===90  ? 0:(syahen * Math.cos(toRadian(kakudo))))
+    const takasa = round(Math.abs(kakudo)===180 ? 0:(syahen * Math.sin(toRadian(kakudo))))
     return {a:teihen, b:takasa}
   }
 
   const calc_side_2 = (teihen, takasa)=>{
     const syahen = round(Math.sqrt(teihen ** 2 + takasa ** 2))
-    const kakudo = normalize180(round(Math.atan2(teihen, takasa)*180/Math.PI))
+    const kakudo = round(toAngle(Math.atan2(teihen, takasa)))
     return {s:syahen, k:kakudo}
   }
 
   const calc_side_4 = (syahen, teihen)=>{
     const wk_rad = Math.acos(teihen / syahen)
     const takasa = round(teihen * Math.tan(wk_rad))
-    const kakudo = normalize180(round(wk_rad*180/Math.PI))
+    const kakudo = round(toAngle(wk_rad))
     return {k:kakudo, t:takasa}
-  }
-
-  const calc_pos = (hankei, angle, direction)=>{
-    const {a:pos_y, b:radius} = calc_side_1(hankei, angle)
-    const {a:pos_z, b:pos_x} = calc_side_1(radius, direction)
-    return {x:pos_x, y:pos_y, z:pos_z}
   }
 
   React.useEffect(() => {
     if(rendered){
-      const box11_result = getposq(p11_object)
-      const p11_pos = getpos(box11_result.position)
-      set_p11_pos(p11_pos)
-
-      const box12_result = getposq(p12_object)
-      const p12_pos = getpos(box12_result.position)
-      set_p12_pos(p12_pos)
-
-      const box13_result = getposq(p13_object)
-      const p13_pos = getpos(box13_result.position)
-      set_p13_pos(p13_pos)
-
-      const box14_result = getposq(p14_object)
-      const p14_pos = getpos(box14_result.position)
-      set_p14_pos(p14_pos)
-
       const box15_result = getposq(p15_object)
       const p15_pos = getpos(box15_result.position)
       set_p15_pos(p15_pos)
@@ -335,14 +367,6 @@ export default function Home() {
       const box16_result = getposq(p16_object)
       const p16_pos = getpos(box16_result.position)
       set_p16_pos(p16_pos)
-
-      const box20_result = getposq(p20_object)
-      const p20_pos = getpos(box20_result.position)
-      set_p20_pos(p20_pos)
-
-      const box22_result = getposq(p22_object)
-      const p22_pos = getpos(box22_result.position)
-      set_p22_pos(p22_pos)
 
       const box21_result = getposq(p21_object)
       const p21_pos = getpos(box21_result.position)
@@ -461,7 +485,8 @@ export default function Home() {
     j4_rotate,set_j4_rotate,j5_rotate,set_j5_rotate,j6_rotate,set_j6_rotate,j7_rotate,set_j7_rotate,
     c_pos_x,set_c_pos_x,c_pos_y,set_c_pos_y,c_pos_z,set_c_pos_z,
     c_deg_x,set_c_deg_x,c_deg_y,set_c_deg_y,c_deg_z,set_c_deg_z,
-    wrist_rot_x,set_wrist_rot_x,wrist_rot_y,set_wrist_rot_y,wrist_rot_z,set_wrist_rot_z
+    wrist_rot_x,set_wrist_rot_x,wrist_rot_y,set_wrist_rot_y,wrist_rot_z,set_wrist_rot_z,
+    tool_rotate,set_tool_rotate
   }
 
   const robotProps = {
@@ -476,9 +501,9 @@ export default function Home() {
         <a-plane position="0 0 0" rotation="-90 0 0" width="10" height="10" color="#7BC8A4"></a-plane>
         <Assets/>
         <Select_Robot {...robotProps}/>
-        <Cursor3dp j_id="20" pos={{x:0,y:0,z:0}} visible={true}>
-          <Cursor3dp j_id="21" pos={{x:0,y:0,z:p15_16_len}} visible={true}></Cursor3dp>
-          <Cursor3dp j_id="22" pos={{x:0,y:-joint_pos.j5.y,z:0}} rot={{x:0,y:j1_rotate,z:0}} visible={true}></Cursor3dp>
+        <Cursor3dp j_id="20" pos={{x:0,y:0,z:0}} visible={cursor_vis}>
+          <Cursor3dp j_id="21" pos={{x:0,y:0,z:p15_16_len}} visible={cursor_vis}></Cursor3dp>
+          <Cursor3dp j_id="22" pos={{x:0,y:-joint_pos.j5.y,z:0}} rot={{x:0,y:j1_rotate,z:0}} visible={cursor_vis}></Cursor3dp>
         </Cursor3dp>
         <a-entity light="type: directional; color: #EEE; intensity: 0.7" position="1 1 1"></a-entity>
         <a-entity light="type: directional; color: #EEE; intensity: 0.7" position="-1 1 1"></a-entity>
@@ -487,12 +512,6 @@ export default function Home() {
         </a-entity>
         <a-sphere position={edit_pos(target)} scale="0.012 0.012 0.012" color="yellow" visible={true}></a-sphere>
         <a-box position={edit_pos(test_pos)} scale="0.03 0.03 0.03" color="green" visible={box_vis}></a-box>
-        <Line pos1={p11_pos} pos2={p12_pos} visible={cursor_vis}></Line>
-        <Line pos1={p12_pos} pos2={p13_pos} visible={cursor_vis}></Line>
-        <Line pos1={p13_pos} pos2={p14_pos} visible={cursor_vis}></Line>
-        <Line pos1={p14_pos} pos2={p15_pos} visible={cursor_vis}></Line>
-        <Line pos1={p15_pos} pos2={p16_pos} visible={cursor_vis}></Line>
-        <Line pos1={p11_pos} pos2={p16_pos} visible={cursor_vis} color="yellow"></Line>
         <Line pos1={{x:1,y:0.0001,z:1}} pos2={{x:-1,y:0.0001,z:-1}} visible={cursor_vis} color="white"></Line>
         <Line pos1={{x:1,y:0.0001,z:-1}} pos2={{x:-1,y:0.0001,z:1}} visible={cursor_vis} color="white"></Line>
         <Line pos1={{x:1,y:0.0001,z:0}} pos2={{x:-1,y:0.0001,z:0}} visible={cursor_vis} color="white"></Line>
@@ -543,6 +562,7 @@ const UR5e = (props)=>{
               <a-entity j_id="5" gltf-model="#j5" position={edit_pos(joint_pos.j5)}>
                 <a-entity j_id="6" gltf-model="#j6" position={edit_pos(joint_pos.j6)}>
                   <UR5e_Tool {...props}/>
+                  {/*<a-cylinder color="crimson" height="0.1" radius="0.005" position={edit_pos(joint_pos.j7)}></a-cylinder>*/}
                 </a-entity>
                 <Cursor3dp j_id="15" visible={cursor_vis}/>
               </a-entity>
