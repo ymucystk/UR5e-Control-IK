@@ -249,7 +249,7 @@ export default function Home() {
     }
     set_j1_rotate(wk_j1_rotate)
 
-    const takasa_t14 = round(distance(joint_pos.j2,{x:0,y:target14.y,z:0}))
+    const takasa_t14 = round(target14.y - joint_pos.j2.y)
     const {t:teihen_t14} = calc_side_4(syahen_t14,joint_pos.j5.x)
     const {s:side_c,k:angle_base} = calc_side_2(teihen_t14,takasa_t14)
     if(isNaN(angle_base)){
