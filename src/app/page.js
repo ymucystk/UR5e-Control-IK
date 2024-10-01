@@ -206,12 +206,7 @@ export default function Home() {
     const elevation_target_t15 =  target15.y - target.y
     const {a:teihen} = calc_side_1(distance_target_t15,direction_offset)
     const {s:syahen,k:kakudo} = calc_side_2(teihen, elevation_target_t15)
-    const wk_j4_rotate = normalize180(round(((j2_rotate + j3_rotate) * -1) + (90 - kakudo)))
-    if(isNaN(wk_j4_rotate)){
-      console.log("wk_j4_rotate 指定可能範囲外！")
-    }else{
-      set_j4_rotate(wk_j4_rotate)
-    }
+    const wk_j4_rotate_sabun = normalize180(90 - kakudo)
 
     const distance_target_t15_2 = round(distance(target,target15))
     const {k:wk_j5_kakudo} = calc_side_4(distance_target_t15_2,syahen)
@@ -237,9 +232,9 @@ export default function Home() {
     }
     const j6_zero_angle = wk_j6_zero_angle*(direction_offset<0?1:-1)
     if(target_move){
-      set_j6_rotate(normalize180(j6_zero_angle + tool_rotate))
+      set_j6_rotate(normalize180(round(j6_zero_angle + tool_rotate)))
     }else{
-      set_tool_rotate(normalize180(j6_rotate - j6_zero_angle))
+      set_tool_rotate(normalize180(round(j6_rotate - j6_zero_angle)))
     }
 
     const target14 = {...target15}
@@ -267,13 +262,15 @@ export default function Home() {
     const max_dis = side_a + side_b
     const min_dis = Math.abs(joint_pos.j3.y - joint_pos.j4.y)
 
+    let wk_j2_rotate = 0
+    let wk_j3_rotate = 0
     if(min_dis > side_c){
-      set_j2_rotate(angle_base)
-      set_j3_rotate(180)
+      wk_j2_rotate = angle_base
+      wk_j3_rotate = 180
     }else
     if(side_c >= max_dis){
-      set_j2_rotate(angle_base)
-      set_j3_rotate(0)
+      wk_j2_rotate = angle_base
+      wk_j3_rotate = 0
     }else{
       let angle_B = toAngle(Math.acos((side_a ** 2 + side_c ** 2 - side_b ** 2) / (2 * side_a * side_c)))
       let angle_C = toAngle(Math.acos((side_a ** 2 + side_b ** 2 - side_c ** 2) / (2 * side_a * side_b)))
@@ -285,15 +282,26 @@ export default function Home() {
       const angle_j3 = normalize180(round(angle_C === 0 ? 0 : 180 - angle_C))
       if(isNaN(angle_j2)){
         console.log("angle_j2 指定可能範囲外！")
+        wk_j2_rotate = j2_rotate
       }else{
-        set_j2_rotate(angle_j2)
+        wk_j2_rotate = angle_j2
       }
       if(isNaN(angle_j3)){
         console.log("angle_j3 指定可能範囲外！")
+        wk_j3_rotate = j3_rotate
       }else{
-        set_j3_rotate(angle_j3)
+        wk_j3_rotate = angle_j3
       }
     }
+    set_j2_rotate(wk_j2_rotate)
+    set_j3_rotate(wk_j3_rotate)
+    const wk_j4_rotate = normalize180(round(((wk_j2_rotate + wk_j3_rotate) * -1) + wk_j4_rotate_sabun))
+    if(isNaN(wk_j4_rotate)){
+      console.log("wk_j4_rotate 指定可能範囲外！")
+    }else{
+      set_j4_rotate(wk_j4_rotate)
+    }
+
   }
 
   const round = (x,d=5)=>{
