@@ -584,7 +584,7 @@ const UR5e = (props)=>{
               <a-entity j_id="5" gltf-model="#j5" position={edit_pos(joint_pos.j5)}>
                 <a-entity j_id="6" gltf-model="#j6" position={edit_pos(joint_pos.j6)}>
                   <UR5e_Tool {...props}/>
-                  <a-cylinder color="crimson" height="0.1" radius="0.005" position={edit_pos(joint_pos.j7)}></a-cylinder>
+                  {/*<a-cylinder color="crimson" height="0.1" radius="0.005" position={edit_pos(joint_pos.j7)}></a-cylinder>*/}
                 </a-entity>
                 <Cursor3dp j_id="15" visible={cursor_vis}/>
               </a-entity>
