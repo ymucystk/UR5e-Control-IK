@@ -54,6 +54,7 @@ export default function Home() {
   const [tool_rotate,set_tool_rotate] = React.useState(0)
   const [wrist_degree,set_wrist_degree] = React.useState({direction:0,angle:0})
   const [p15_16_len,set_p15_16_len] = React.useState(1)
+  const [dsp_message,set_dsp_message] = React.useState("")
 
   const toolNameList = ["No tool","Gripper","E-Pick"]
   const [toolName,set_toolName] = React.useState(toolNameList[0])
@@ -168,6 +169,7 @@ export default function Home() {
     const direction = round(toAngle(z_vec_base.angleTo(xz_vector)))*dir_sign1
     if(isNaN(direction)){
       console.log("p21_pos 指定可能範囲外！")
+      set_dsp_message("p21_pos 指定可能範囲外！")
       return
     }
     const dir_sign2 = p21_pos.z < 0 ? -1 : 1
@@ -175,6 +177,7 @@ export default function Home() {
     const angle = round(toAngle(y_vec_base.angleTo(y_vector)))*dir_sign2
     if(isNaN(angle)){
       console.log("p21_pos 指定可能範囲外！")
+      set_dsp_message("p21_pos 指定可能範囲外！")
       return
     }
     set_wrist_degree({direction,angle})
@@ -185,6 +188,7 @@ export default function Home() {
   }
 
   const target15_update = (target15,wrist_direction,wrist_angle,target_move)=>{
+    let dsp_message = ""
     const distance_center_t15 = round(distance({x:0,y:0,z:0},{x:target15.x,y:0,z:target15.z}))
     const {k:kakudo_t15} = calc_side_4(distance_center_t15,joint_pos.j5.x)
 
@@ -193,11 +197,13 @@ export default function Home() {
     const direction_t15 = round(toAngle(z_vec_base.angleTo(xz_vector_t15)))*dir_sign_t15
     if(isNaN(direction_t15)){
       console.log("target15 指定可能範囲外！")
+      set_dsp_message("target15 指定可能範囲外！")
       return
     }
     let wk_j1_rotate = normalize180(round(direction_t15 - (90 - kakudo_t15)))
     if(isNaN(wk_j1_rotate)){
       console.log("wk_j1_rotate 指定可能範囲外！")
+      dsp_message = "wk_j1_rotate 指定可能範囲外！"
       wk_j1_rotate = j1_rotate
     }
 
@@ -216,6 +222,7 @@ export default function Home() {
     const wk_j5_rotate = normalize180(wk_j5_kakudo*(direction_offset<0?-1:1))
     if(isNaN(wk_j5_rotate)){
       console.log("wk_j5_rotate 指定可能範囲外！")
+      dsp_message = "wk_j5_rotate 指定可能範囲外！"
     }else{
       set_j5_rotate(wk_j5_rotate)
     }
@@ -225,8 +232,10 @@ export default function Home() {
     let {k:wk_j6_zero_angle} = calc_side_4(joint_pos.j5.y,wk_syahen)
     if(isNaN(wk_j6_zero_angle)){
       console.log("j6_zero_angle 指定可能範囲外！")
+      dsp_message = "j6_zero_angle 指定可能範囲外！"
       wk_j6_zero_angle = j6_rotate
     }
+    wk_j6_zero_angle = wk_j6_zero_angle * (wrist_angle<90?-1:1)
     if(Math.abs(direction_offset) >= 90){
       wk_j6_zero_angle = 90 + (90 - wk_j6_zero_angle)
     }
@@ -245,6 +254,7 @@ export default function Home() {
     const syahen_t14 = round(distance({x:0,y:0,z:0},{x:target14.x,y:0,z:target14.z}))
     if(syahen_t14 < joint_pos.j5.x){
       console.log("p14 指定可能範囲外！")
+      set_dsp_message("p14 指定可能範囲外！")
       return
     }
     set_j1_rotate(wk_j1_rotate)
@@ -254,6 +264,7 @@ export default function Home() {
     const {s:side_c,k:angle_base} = calc_side_2(teihen_t14,takasa_t14)
     if(isNaN(angle_base)){
       console.log("angle_base 指定可能範囲外！")
+      set_dsp_message("angle_base 指定可能範囲外！")
       return
     }
 
@@ -282,12 +293,14 @@ export default function Home() {
       const angle_j3 = normalize180(round(angle_C === 0 ? 0 : 180 - angle_C))
       if(isNaN(angle_j2)){
         console.log("angle_j2 指定可能範囲外！")
+        dsp_message = "angle_j2 指定可能範囲外！"
         wk_j2_rotate = j2_rotate
       }else{
         wk_j2_rotate = angle_j2
       }
       if(isNaN(angle_j3)){
         console.log("angle_j3 指定可能範囲外！")
+        dsp_message = "angle_j3 指定可能範囲外！"
         wk_j3_rotate = j3_rotate
       }else{
         wk_j3_rotate = angle_j3
@@ -298,10 +311,11 @@ export default function Home() {
     const wk_j4_rotate = normalize180(round(((wk_j2_rotate + wk_j3_rotate) * -1) + wk_j4_rotate_sabun))
     if(isNaN(wk_j4_rotate)){
       console.log("wk_j4_rotate 指定可能範囲外！")
+      dsp_message = "wk_j4_rotate 指定可能範囲外！"
     }else{
       set_j4_rotate(wk_j4_rotate)
     }
-
+    set_dsp_message(dsp_message)
   }
 
   const round = (x,d=5)=>{
@@ -527,7 +541,7 @@ export default function Home() {
       </a-scene>
       <Controller {...controllerProps}/>
       <div className="footer" >
-        <div>{`wrist_degree:{direction:${wrist_degree.direction},angle:${wrist_degree.angle}}`}</div>
+        <div>{`wrist_degree:{direction:${wrist_degree.direction},angle:${wrist_degree.angle}}  ${dsp_message}`}</div>
       </div>
     </>
     );
@@ -570,7 +584,7 @@ const UR5e = (props)=>{
               <a-entity j_id="5" gltf-model="#j5" position={edit_pos(joint_pos.j5)}>
                 <a-entity j_id="6" gltf-model="#j6" position={edit_pos(joint_pos.j6)}>
                   <UR5e_Tool {...props}/>
-                  {/*<a-cylinder color="crimson" height="0.1" radius="0.005" position={edit_pos(joint_pos.j7)}></a-cylinder>*/}
+                  <a-cylinder color="crimson" height="0.1" radius="0.005" position={edit_pos(joint_pos.j7)}></a-cylinder>
                 </a-entity>
                 <Cursor3dp j_id="15" visible={cursor_vis}/>
               </a-entity>
