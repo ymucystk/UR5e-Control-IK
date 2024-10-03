@@ -235,7 +235,7 @@ export default function Home() {
       dsp_message = "j6_zero_angle 指定可能範囲外！"
       wk_j6_zero_angle = j6_rotate
     }
-    wk_j6_zero_angle = wk_j6_zero_angle * (wrist_angle<90?-1:1)
+    wk_j6_zero_angle = wk_j6_zero_angle * (Math.abs(wrist_angle)<90?-1:1)
     if(Math.abs(direction_offset) >= 90){
       wk_j6_zero_angle = 90 + (90 - wk_j6_zero_angle)
     }
