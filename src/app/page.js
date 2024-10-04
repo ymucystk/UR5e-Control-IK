@@ -53,7 +53,6 @@ export default function Home() {
   const [wrist_rot_z,set_wrist_rot_z] = React.useState(0)
   const [tool_rotate,set_tool_rotate] = React.useState(0)
   const [wrist_degree,set_wrist_degree] = React.useState({direction:0,angle:0})
-  const [p15_16_len,set_p15_16_len] = React.useState(1)
   const [dsp_message,set_dsp_message] = React.useState("")
 
   const toolNameList = ["No tool","Gripper","E-Pick"]
@@ -76,6 +75,7 @@ export default function Home() {
   }
 
   const [target,set_target] = React.useState({x:0.3,y:0.7,z:0.3})
+  const [p15_16_len,set_p15_16_len] = React.useState(joint_pos.j7.z)
 
   /*const [target,set_target] = React.useState({x:joint_pos.j5.x,
     y:(joint_pos.j2.y+joint_pos.j3.y+joint_pos.j4.y+joint_pos.j5.y),
@@ -89,6 +89,12 @@ export default function Home() {
     }, 10);
     return function(){clearInterval(intervalId)};
   }, [now]);
+
+  React.useEffect(() => {
+    if(rendered){
+      target_update(true,get_p21_pos())
+    }
+  },[rendered])
 
   const robotChange = ()=>{
     const get = (robotName)=>{
@@ -137,33 +143,52 @@ export default function Home() {
     }
   }, [j6_rotate])
 
+  const get_j5_quaternion = (rot_x=wrist_rot_x,rot_y=wrist_rot_y,rot_z=wrist_rot_z)=>{
+    const wkq = new THREE.Quaternion();
+    const wkqwk = new THREE.Quaternion();
+    wkqwk.setFromAxisAngle(z_vec_base,toRadian(rot_z))
+    wkq.multiply(wkqwk)
+    wkqwk.setFromAxisAngle(y_vec_base,toRadian(rot_y))
+    wkq.multiply(wkqwk)
+    wkqwk.setFromAxisAngle(x_vec_base,toRadian(rot_x))
+    wkq.multiply(wkqwk)
+    return wkq
+  }
+
+  const get_p21_pos = ()=>{
+    const j5q = get_j5_quaternion()
+    const p21_pos = q_to_pos(j5q, p15_16_len)
+    return p21_pos
+  }
+
   React.useEffect(() => {
     if(rendered){
-      const wkq = new THREE.Quaternion();
-      const wkqwk = new THREE.Quaternion();
-      wkqwk.setFromAxisAngle(z_vec_base,toRadian(wrist_rot_z))
-      wkq.multiply(wkqwk)
-      wkqwk.setFromAxisAngle(y_vec_base,toRadian(wrist_rot_y))
-      wkq.multiply(wkqwk)
-      wkqwk.setFromAxisAngle(x_vec_base,toRadian(wrist_rot_x))
-      wkq.multiply(wkqwk)
-      p20_object.quaternion.copy(wkq)
+      const j5q = get_j5_quaternion()
+      const p21_pos = q_to_pos(j5q, p15_16_len)
+      set_p21_pos(p21_pos)
+      target_update(false,p21_pos)
     }
   },[wrist_rot_x,wrist_rot_y,wrist_rot_z])
 
-  React.useEffect(() => {
-    if(rendered){
-      target_update(false)
+  const q_to_pos = (quaternion,length,source_pos={x:0,y:0,z:0})=>{
+    const vx = 2*(quaternion.x*quaternion.z + quaternion.w*quaternion.y)
+    const vy = 2*(quaternion.y*quaternion.z - quaternion.w*quaternion.x)
+    const vz = quaternion.w**2 - quaternion.x**2 - quaternion.y**2 + quaternion.z**2
+    const resultpos = {
+      x:round((length*vx) + source_pos.x),
+      y:round((length*vy) + source_pos.y),
+      z:round((length*vz) + source_pos.z)
     }
-  },[p21_pos.x,p21_pos.y,p21_pos.z])
+    return resultpos
+  }
 
   React.useEffect(() => {
     if(rendered){
-      target_update(true)
+      target_update(true,p21_pos)
     }
   },[target,tool_rotate])
 
-  const target_update = (target_move)=>{
+  const target_update = (target_move,p21_pos)=>{
     const dir_sign1 = p21_pos.x < 0 ? -1 : 1
     const xz_vector = new THREE.Vector3(p21_pos.x,0,p21_pos.z).normalize()
     const direction = round(toAngle(z_vec_base.angleTo(xz_vector)))*dir_sign1
@@ -390,21 +415,14 @@ export default function Home() {
       const p16_pos = getpos(box16_result.position)
       set_p16_pos(p16_pos)
 
-      const box21_result = getposq(p21_object)
-      const p21_pos = getpos(box21_result.position)
-      set_p21_pos((before)=>{
-        if(before.x !== p21_pos.x || before.y !== p21_pos.y || before.z !== p21_pos.z){
-          set_p15_16_len(distance(p15_pos,p16_pos))
-        }
-        return p21_pos
-      })
+      set_p15_16_len(distance(p15_pos,p16_pos))
     }
   },[now])
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       require("aframe");
-      setTimeout(set_rendered(true),1000)
+      setTimeout(set_rendered(true),1)
       console.log('set_rendered')
 
       if(!registered){
