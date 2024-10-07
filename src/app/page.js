@@ -1,6 +1,8 @@
 "use client";
-import * as React from 'react'
-import Controller from './controller.js'
+import * as React from 'react';
+import Controller from './controller.js';
+//import {THREE} from 'aframe';
+
 
 import { mqttclient, connectMQTT, subscribe } from './mqtt_sync.js'
 import { VR_INFO_Camera, VR_Controller_Right, VR_mode_detector, add_vr_component } from './vr_controller.js';
@@ -18,7 +20,7 @@ export default function Home() {
   const [abutton, set_abutton] = React.useState(false)
   const [bbutton, set_bbutton] = React.useState(false)
   const [grip, set_grip] = React.useState(false)
-  const [vr_quartanion, set_vr_quartanion] = React.useState({})
+  const [vr_quartanion, set_vr_quartanion] = React.useState({x:0,y:0,z:0,w:0})
 
   // MQTT initial 
   const [send_mq, set_send_mq] = React.useState(0)
@@ -113,17 +115,6 @@ export default function Home() {
     return function(){clearInterval(intervalId)};
   }, [now]);
 
-  const robotChange = ()=>{
-    const get = (robotName)=>{
-      let changeIdx = robotNameList.findIndex((e)=>e===robotName) + 1
-      if(changeIdx >= robotNameList.length){
-        changeIdx = 0
-      }
-      return robotNameList[changeIdx]
-    }
-    set_robotName(get)
-  }
-
   React.useEffect(() => {
     if (j1_object !== undefined) {
       j1_object.quaternion.setFromAxisAngle(y_vec_base,toRadian(j1_rotate))
@@ -164,6 +155,8 @@ export default function Home() {
     }
   }, [j6_rotate])
 
+
+
   React.useEffect(() => {
     if(rendered){
       const wkq = new THREE.Quaternion();
@@ -177,6 +170,20 @@ export default function Home() {
       p20_object.quaternion.copy(wkq)
     }
   },[wrist_rot_x,wrist_rot_y,wrist_rot_z])
+
+
+  React.useEffect(() => {
+    if(rendered){
+      const e = new THREE.Euler();
+      e.setFromQuaternion(vr_quartanion,"ZXY"); // default is "XYZ"
+      set_wrist_rot_x(toAngle(e.x));
+      set_wrist_rot_y(toAngle(e.y));
+      set_wrist_rot_z(toAngle(e.z));
+      console.log("Angle", wrist_rot_x, wrist_rot_y, wrist_rot_z);
+      console.log("VR_quartanion", vr_quartanion)
+    }
+
+  },[vr_quartanion.x, vr_quartanion.y,vr_quartanion.z,vr_quartanion.w]);
 
   React.useEffect(() => {
     if(rendered){
@@ -427,10 +434,11 @@ export default function Home() {
       })
     }
   },[now])
+  
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
-      require("aframe");
+      require("aframe");// <-結局、A-Frameは動的なインポートをするのが重要！
       setTimeout(set_rendered(true),1000)
       console.log('set_rendered')
 
@@ -446,14 +454,7 @@ export default function Home() {
         set_y_vec_base(new THREE.Vector3(0,1,0).normalize())
         set_z_vec_base(new THREE.Vector3(0,0,1).normalize())
       
-        AFRAME.registerComponent('robot-click', {
-          init: function () {
-            this.el.addEventListener('click', (evt)=>{
-              robotChange()
-              console.log('robot-click')
-            });
-          }
-        });
+
         AFRAME.registerComponent('j_id', {
           schema: {type: 'number', default: 0},
           init: function () {
@@ -524,7 +525,7 @@ export default function Home() {
 
         console.log("Add vr components");
         // ここから、VR 用の初期設定追加
-        add_vr_component(AFRAME, { set_target, set_grip, set_trigger, set_abutton, set_bbutton, set_vr_quartanion,set_send_mq });
+        add_vr_component(AFRAME, { set_target,  set_grip, set_trigger,  set_abutton, set_bbutton, set_vr_quartanion,set_send_mq });
         VR_mode_detector(AFRAME, set_c_pos_y);
 
         // mqtt
@@ -585,9 +586,12 @@ export default function Home() {
     return (
     <>
       <a-scene xr-mode-ui="enterAREnabled: true; XRMode: xr" vr-mode-detector>
-        <a-plane position="0 0 0" rotation="-90 0 0" width="10" height="10" color="#7BC8A4"></a-plane>
+{/*        <a-plane position="0 0 0" rotation="-90 0 0" width="10" height="10" color="#7BC8A4"></a-plane>
+ id, pos={x:0,y:0,z:0}, q, len=0.5, opa=1, children, visible=false 
+*/}
         <Assets/>
         <Select_Robot {...robotProps}/>
+        <Cursor3dpQ id="vr_q" pos={{x:target.x, y:target.y, z:target.z}} q={vr_quartanion} visible={true}></Cursor3dpQ>
         <Cursor3dp j_id="20" pos={{x:0,y:0,z:0}} visible={cursor_vis}>
           <Cursor3dp j_id="21" pos={{x:0,y:0,z:p15_16_len}} visible={cursor_vis}></Cursor3dp>
           <Cursor3dp j_id="22" pos={{x:0,y:-joint_pos.j5.y,z:0}} rot={{x:0,y:j1_rotate,z:0}} visible={cursor_vis}></Cursor3dp>
@@ -597,7 +601,7 @@ export default function Home() {
         <a-entity id="rig" position={`${c_pos_x} ${c_pos_y} ${c_pos_z}`} rotation={`${c_deg_x} ${c_deg_y} ${c_deg_z}`}>
           <a-camera id="camera" cursor="rayOrigin: mouse;" position="0 0 0"></a-camera>
         </a-entity>
-        <a-entity id="ctlR" laser-controls="hand: right" raycaster="showLine: true" vr-ctrl-listener="hand: right"></a-entity>
+        <a-entity id="ctlR" laser-controls="hand: right; " raycaster="showLine: true; " vr-ctrl-listener="hand: right"></a-entity>
 
         <a-sphere position={edit_pos(target)} scale="0.012 0.012 0.012" color="yellow" visible={true}></a-sphere>
         <a-box position={edit_pos(test_pos)} scale="0.03 0.03 0.03" color="green" visible={box_vis}></a-box>
@@ -643,7 +647,7 @@ const Assets = ()=>{
 const UR5e = (props)=>{
   const {visible, cursor_vis, edit_pos, joint_pos} = props
   return (<>{visible?
-    <a-entity robot-click="" gltf-model="#base" position={edit_pos(joint_pos.base)} visible={visible}>
+    <a-entity gltf-model="#base" position={edit_pos(joint_pos.base)} visible={visible}>
       <a-entity j_id="1" gltf-model="#j1" position={edit_pos(joint_pos.j1)}>
         <a-entity j_id="2" gltf-model="#j2" position={edit_pos(joint_pos.j2)}>
           <a-entity j_id="3" gltf-model="#j3" position={edit_pos(joint_pos.j3)}>
@@ -673,7 +677,7 @@ const UR5e_Tool = (props)=>{
   const {j7_rotate, joint_pos:{j7:j7pos}, cursor_vis, box_vis, edit_pos} = props
   const return_table = [
     <>
-      <Cursor3dp j_id="16" pos={j7pos} visible={cursor_vis}/>
+      <Cursor3dp j_id="16" pos={j7pos} visible={true}/>
       <a-box color="yellow" scale="0.02 0.02 0.02" position={edit_pos(j7pos)} visible={box_vis}></a-box>
     </>,
     <a-entity gltf-model="#GripperBase" position={edit_pos(Gripperpos)} rotation={`0 0 0`}>
