@@ -525,6 +525,7 @@ export default function Home() {
 
         console.log("Add vr components");
         // ここから、VR 用の初期設定追加
+        set_vr_quartanion(new THREE.Quaternion(0,0,0,1));
         add_vr_component(AFRAME, { set_target,  set_grip, set_trigger,  set_abutton, set_bbutton, set_vr_quartanion,set_send_mq });
         VR_mode_detector(AFRAME, set_c_pos_y);
 
@@ -591,7 +592,8 @@ export default function Home() {
 */}
         <Assets/>
         <Select_Robot {...robotProps}/>
-        <Cursor3dpQ id="vr_q" pos={{x:target.x, y:target.y, z:target.z}} q={vr_quartanion} visible={true}></Cursor3dpQ>
+        <Cursor3dpQ id="vr_q" pos={{x:target.x, y:target.y, z:target.z}} qx={vr_quartanion.x}
+        qy={vr_quartanion.y} qz={vr_quartanion.z} qw={vr_quartanion.w} visible={true}></Cursor3dpQ>
         <Cursor3dp j_id="20" pos={{x:0,y:0,z:0}} visible={cursor_vis}>
           <Cursor3dp j_id="21" pos={{x:0,y:0,z:p15_16_len}} visible={cursor_vis}></Cursor3dp>
           <Cursor3dp j_id="22" pos={{x:0,y:-joint_pos.j5.y,z:0}} rot={{x:0,y:j1_rotate,z:0}} visible={cursor_vis}></Cursor3dp>
@@ -731,7 +733,7 @@ const Cursor3dp = (props) => {
 }
 
 const Cursor3dpQ = (props) => {
-  const { id, pos={x:0,y:0,z:0}, q, len=0.5, opa=1, children, visible=false } = props;
+  const { id, pos={x:0,y:0,z:0}, qx,qy,qz,qw, len=0.5, opa=1, children, visible=false } = props;
 
   const line_x = `start: 0 0 0; end: ${len} 0 0; color: olive; opacity: ${opa};`
   const line_y = `start: 0 0 0; end: 0 ${len} 0; color: lime; opacity: ${opa};`
@@ -742,7 +744,7 @@ const Cursor3dpQ = (props) => {
       line__1={line_y}
       line__2={line_z}
       position={`${pos.x} ${pos.y} ${pos.z}`}
-      setq={`${q.x} ${q.y} ${q.z} ${q.w}`}
+      quaternion={`${qx} ${qy} ${qz} ${qw}`}
       visible={visible}
   >{children}</a-entity>
 }
