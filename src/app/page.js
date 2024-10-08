@@ -5,7 +5,7 @@ import Controller from './controller.js'
 export default function Home() {
   const [now, setNow] = React.useState(new Date())
   const [rendered,set_rendered] = React.useState(false)
-  const robotNameList = ["UR5e"]
+  const robotNameList = ["Model"]
   const [robotName,set_robotName] = React.useState(robotNameList[0])
   const [cursor_vis,set_cursor_vis] = React.useState(false)
   const [box_vis,set_box_vis] = React.useState(false)
@@ -34,15 +34,15 @@ export default function Home() {
   const [p20_object,set_p20_object] = React.useState()
   const [p21_object,set_p21_object] = React.useState()
   const [p22_object,set_p22_object] = React.useState()
+  const [p51_object,set_p51_object] = React.useState()
 
   const [p15_pos,set_p15_pos] = React.useState({x:0,y:0,z:0})
   const [p16_pos,set_p16_pos] = React.useState({x:0,y:0,z:0})
-  const [p21_pos,set_p21_pos] = React.useState({x:0,y:0,z:0})
 
   const [test_pos,set_test_pos] = React.useState({x:0,y:0,z:0})
 
   const [c_pos_x,set_c_pos_x] = React.useState(0)
-  const [c_pos_y,set_c_pos_y] = React.useState(0.5)
+  const [c_pos_y,set_c_pos_y] = React.useState(0.4)
   const [c_pos_z,set_c_pos_z] = React.useState(1.0)
   const [c_deg_x,set_c_deg_x] = React.useState(0)
   const [c_deg_y,set_c_deg_y] = React.useState(0)
@@ -76,11 +76,6 @@ export default function Home() {
 
   const [target,set_target] = React.useState({x:0.3,y:0.7,z:0.3})
   const [p15_16_len,set_p15_16_len] = React.useState(joint_pos.j7.z)
-
-  /*const [target,set_target] = React.useState({x:joint_pos.j5.x,
-    y:(joint_pos.j2.y+joint_pos.j3.y+joint_pos.j4.y+joint_pos.j5.y),
-    z:joint_pos.j7.z})*/
- 
   const [p14_maxlen,set_p14_maxlen] = React.useState(0)
  
   React.useEffect(function() {
@@ -92,7 +87,7 @@ export default function Home() {
 
   React.useEffect(() => {
     if(rendered){
-      target_update(true,get_p21_pos())
+      target_update(true)
     }
   },[rendered])
 
@@ -144,33 +139,35 @@ export default function Home() {
   }, [j6_rotate])
 
   const get_j5_quaternion = (rot_x=wrist_rot_x,rot_y=wrist_rot_y,rot_z=wrist_rot_z)=>{
-    const wkq = new THREE.Quaternion();
-    const wkqwk = new THREE.Quaternion();
-    wkqwk.setFromAxisAngle(z_vec_base,toRadian(rot_z))
-    wkq.multiply(wkqwk)
-    wkqwk.setFromAxisAngle(y_vec_base,toRadian(rot_y))
-    wkq.multiply(wkqwk)
-    wkqwk.setFromAxisAngle(x_vec_base,toRadian(rot_x))
-    wkq.multiply(wkqwk)
+    const wkq = new THREE.Quaternion()
+    wkq.multiply(new THREE.Quaternion().setFromAxisAngle(z_vec_base,toRadian(rot_z)))
+    wkq.multiply(new THREE.Quaternion().setFromAxisAngle(y_vec_base,toRadian(rot_y)))
+    wkq.multiply(new THREE.Quaternion().setFromAxisAngle(x_vec_base,toRadian(rot_x)))
     return wkq
   }
 
   const get_p21_pos = ()=>{
     const j5q = get_j5_quaternion()
-    const p21_pos = q_to_pos(j5q, p15_16_len)
+    const p21_pos = q_to_pos_z(j5q, p15_16_len)
     return p21_pos
+  }
+
+  const get_p22_pos = ()=>{
+    const j5q = get_j5_quaternion()
+    const p22_pos = q_to_pos_y(j5q, joint_pos.j5.y)
+    return p22_pos
   }
 
   React.useEffect(() => {
     if(rendered){
-      const j5q = get_j5_quaternion()
-      const p21_pos = q_to_pos(j5q, p15_16_len)
-      set_p21_pos(p21_pos)
-      target_update(false,p21_pos)
+      target_update(false)
+
+      //p51_object.quaternion.copy(get_j5_quaternion())
+  
     }
   },[wrist_rot_x,wrist_rot_y,wrist_rot_z])
 
-  const q_to_pos = (quaternion,length,source_pos={x:0,y:0,z:0})=>{
+  const q_to_pos_z = (quaternion,length,source_pos={x:0,y:0,z:0})=>{
     const vx = 2*(quaternion.x*quaternion.z + quaternion.w*quaternion.y)
     const vy = 2*(quaternion.y*quaternion.z - quaternion.w*quaternion.x)
     const vz = quaternion.w**2 - quaternion.x**2 - quaternion.y**2 + quaternion.z**2
@@ -182,13 +179,26 @@ export default function Home() {
     return resultpos
   }
 
+  const q_to_pos_y = (quaternion,length,source_pos={x:0,y:0,z:0})=>{
+    const vx = 2*(quaternion.x*quaternion.y - quaternion.w*quaternion.z)
+    const vz = 2*(quaternion.z*quaternion.y + quaternion.w*quaternion.x)
+    const vy = quaternion.w**2 - quaternion.x**2 - quaternion.z**2 + quaternion.y**2
+    const resultpos = {
+      x:round((length*vx) + source_pos.x),
+      y:round((length*vy) + source_pos.y),
+      z:round((length*vz) + source_pos.z)
+    }
+    return resultpos
+  }
+
   React.useEffect(() => {
     if(rendered){
-      target_update(true,p21_pos)
+      target_update(true)
     }
-  },[target,tool_rotate])
+  },[target,tool_rotate,p15_16_len])
 
-  const target_update = (target_move,p21_pos)=>{
+  const target_update = (target_move)=>{
+    const p21_pos = get_p21_pos()
     const dir_sign1 = p21_pos.x < 0 ? -1 : 1
     const xz_vector = new THREE.Vector3(p21_pos.x,0,p21_pos.z).normalize()
     const direction = round(toAngle(z_vec_base.angleTo(xz_vector)))*dir_sign1
@@ -199,7 +209,7 @@ export default function Home() {
     }
     const dir_sign2 = p21_pos.z < 0 ? -1 : 1
     const y_vector = new THREE.Vector3(p21_pos.x,p21_pos.y,p21_pos.z).normalize()
-    const angle = round(toAngle(y_vec_base.angleTo(y_vector)))*dir_sign2
+    const angle = round(toAngle(y_vec_base.angleTo(y_vector)))*dir_sign2*(Math.abs(direction)>90?-1:1)
     if(isNaN(angle)){
       console.log("p21_pos 指定可能範囲外！")
       set_dsp_message("p21_pos 指定可能範囲外！")
@@ -242,39 +252,45 @@ export default function Home() {
     const distance_target_t15_2 = round(distance(target,target15))
     const {k:wk_j5_kakudo} = calc_side_4(distance_target_t15_2,syahen)
 
-    const {a:p14_offset_y,b:p14_offset_distance} = calc_side_1(joint_pos.j5.y,(90 - kakudo))
-    const {a:p14_offset_z,b:p14_offset_x} = calc_side_1(p14_offset_distance,wk_j1_rotate)
-    const wk_j5_rotate = normalize180(wk_j5_kakudo*(direction_offset<0?-1:1))
+    let wk_j5_rotate = normalize180(wk_j5_kakudo*(direction_offset<0?-1:1))
     if(isNaN(wk_j5_rotate)){
       console.log("wk_j5_rotate 指定可能範囲外！")
       dsp_message = "wk_j5_rotate 指定可能範囲外！"
+      wk_j5_rotate = j5_rotate
     }else{
       set_j5_rotate(wk_j5_rotate)
     }
 
-    const {a:wk_teihen} = calc_side_1(p14_offset_distance,direction_offset)
-    const {s:wk_syahen} = calc_side_2(wk_teihen,p14_offset_y)
-    let {k:wk_j6_zero_angle} = calc_side_4(joint_pos.j5.y,wk_syahen)
-    if(isNaN(wk_j6_zero_angle)){
-      console.log("j6_zero_angle 指定可能範囲外！")
-      dsp_message = "j6_zero_angle 指定可能範囲外！"
-      wk_j6_zero_angle = j6_rotate
-    }
-    wk_j6_zero_angle = wk_j6_zero_angle * (Math.abs(wrist_angle)<90?-1:1)
-    if(Math.abs(direction_offset) >= 90){
-      wk_j6_zero_angle = 90 + (90 - wk_j6_zero_angle)
-    }
-    const j6_zero_angle = wk_j6_zero_angle*(direction_offset<0?1:-1)
-    if(target_move){
-      set_j6_rotate(normalize180(round(j6_zero_angle + tool_rotate)))
-    }else{
-      set_tool_rotate(normalize180(round(j6_rotate - j6_zero_angle)))
-    }
+    const {a:p14_offset_y,b:p14_offset_distance} = calc_side_1(joint_pos.j5.y,wk_j4_rotate_sabun)
+    const {a:p14_offset_z,b:p14_offset_x} = calc_side_1(p14_offset_distance,wk_j1_rotate)
 
     const target14 = {...target15}
     target14.x -= p14_offset_x
     target14.y -= p14_offset_y
     target14.z -= p14_offset_z
+
+    const p22_pos_offset = get_p22_pos()
+    const wk_vector1 = new THREE.Vector3(p22_pos_offset.x,p22_pos_offset.y,p22_pos_offset.z).normalize()
+    const wk_vector2 = new THREE.Vector3(p14_offset_x,p14_offset_y,p14_offset_z).normalize()
+    const wk_j6_reset_angle = round(toAngle(wk_vector1.angleTo(wk_vector2)))
+
+    const j5q = get_j5_quaternion()
+    const wk_j5q_1 = new THREE.Quaternion().copy(j5q)
+    const wk_j5q_2 = new THREE.Quaternion().copy(j5q)
+
+    wk_j5q_1.multiply(new THREE.Quaternion().setFromAxisAngle(z_vec_base,toRadian(wk_j6_reset_angle)))
+    const wk_pos_1 = q_to_pos_y(wk_j5q_1,joint_pos.j5.y)
+    const wk_angle2 = round(toAngle(wk_vector2.angleTo(new THREE.Vector3(wk_pos_1.x,wk_pos_1.y,wk_pos_1.z).normalize())))
+
+    
+    wk_j5q_2.multiply(new THREE.Quaternion().setFromAxisAngle(z_vec_base,toRadian(wk_j6_reset_angle * -1)))
+    const wk_pos_2 = q_to_pos_y(wk_j5q_2,joint_pos.j5.y)
+    const wk_angle3 = round(toAngle(wk_vector2.angleTo(new THREE.Vector3(wk_pos_2.x,wk_pos_2.y,wk_pos_2.z).normalize())))
+
+    const sign = (wk_angle2 < wk_angle3)?-1:1
+    const wk_j6_rotate = wk_j6_reset_angle * sign
+
+    set_j6_rotate(normalize180(round(wk_j6_rotate + tool_rotate)))
 
     const syahen_t14 = round(distance({x:0,y:0,z:0},{x:target14.x,y:0,z:target14.z}))
     if(syahen_t14 < joint_pos.j5.x){
@@ -333,10 +349,11 @@ export default function Home() {
     }
     set_j2_rotate(wk_j2_rotate)
     set_j3_rotate(wk_j3_rotate)
-    const wk_j4_rotate = normalize180(round(((wk_j2_rotate + wk_j3_rotate) * -1) + wk_j4_rotate_sabun))
+    let wk_j4_rotate = normalize180(round(((wk_j2_rotate + wk_j3_rotate) * -1) + wk_j4_rotate_sabun))
     if(isNaN(wk_j4_rotate)){
       console.log("wk_j4_rotate 指定可能範囲外！")
       dsp_message = "wk_j4_rotate 指定可能範囲外！"
+      wk_j4_rotate = j4_rotate
     }else{
       set_j4_rotate(wk_j4_rotate)
     }
@@ -492,23 +509,15 @@ export default function Home() {
             }else
             if(this.data === 22){
               set_p22_object(this.el.object3D)
+            }else
+            if(this.data === 51){
+              set_p51_object(this.el.object3D)
             }
           },
           remove: function () {
             if(this.data === 16){
               set_p16_object(this.el.object3D)
             }
-          }
-        });
-        AFRAME.registerComponent('quaternion', {
-          schema: {type: 'vec4', default: {x:0,y:0,z:0,w:1}},
-          init: function () {
-            const q = new THREE.Quaternion(this.data.x,this.data.y,this.data.z,this.data.w).normalize()
-            this.el.object3D.quaternion.copy(q)
-          },
-          update: function () {
-            const q = new THREE.Quaternion(this.data.x,this.data.y,this.data.z,this.data.w).normalize()
-            this.el.object3D.quaternion.copy(q)
           }
         });
       }
@@ -526,7 +535,7 @@ export default function Home() {
     c_pos_x,set_c_pos_x,c_pos_y,set_c_pos_y,c_pos_z,set_c_pos_z,
     c_deg_x,set_c_deg_x,c_deg_y,set_c_deg_y,c_deg_z,set_c_deg_z,
     wrist_rot_x,set_wrist_rot_x,wrist_rot_y,set_wrist_rot_y,wrist_rot_z,set_wrist_rot_z,
-    tool_rotate,set_tool_rotate
+    tool_rotate,set_tool_rotate,normalize180
   }
 
   const robotProps = {
@@ -556,6 +565,7 @@ export default function Home() {
         <Line pos1={{x:1,y:0.0001,z:-1}} pos2={{x:-1,y:0.0001,z:1}} visible={cursor_vis} color="white"></Line>
         <Line pos1={{x:1,y:0.0001,z:0}} pos2={{x:-1,y:0.0001,z:0}} visible={cursor_vis} color="white"></Line>
         <Line pos1={{x:0,y:0.0001,z:1}} pos2={{x:0,y:0.0001,z:-1}} visible={cursor_vis} color="white"></Line>
+        {/*<a-cylinder j_id="51" color="green" height="0.1" radius="0.005" position={edit_pos({x:0.3,y:0.3,z:0.3})}></a-cylinder>*/}
       </a-scene>
       <Controller {...controllerProps}/>
       <div className="footer" >
@@ -575,7 +585,7 @@ export default function Home() {
 const Assets = ()=>{
   return (
     <a-assets>
-      {/*UR5e*/}
+      {/*Model*/}
       <a-asset-items id="base" src="UR5e_Base.gltf" ></a-asset-items>
       <a-asset-items id="j1" src="UR5e_j1.gltf" ></a-asset-items>
       <a-asset-items id="j2" src="UR5e_j2.gltf" ></a-asset-items>
@@ -591,7 +601,7 @@ const Assets = ()=>{
   )
 }
 
-const UR5e = (props)=>{
+const Model = (props)=>{
   const {visible, cursor_vis, edit_pos, joint_pos} = props
   return (<>{visible?
     <a-entity robot-click="" gltf-model="#base" position={edit_pos(joint_pos.base)} visible={visible}>
@@ -601,7 +611,7 @@ const UR5e = (props)=>{
             <a-entity j_id="4" gltf-model="#j4" position={edit_pos(joint_pos.j4)}>
               <a-entity j_id="5" gltf-model="#j5" position={edit_pos(joint_pos.j5)}>
                 <a-entity j_id="6" gltf-model="#j6" position={edit_pos(joint_pos.j6)}>
-                  <UR5e_Tool {...props}/>
+                  <Model_Tool {...props}/>
                   {/*<a-cylinder color="crimson" height="0.1" radius="0.005" position={edit_pos(joint_pos.j7)}></a-cylinder>*/}
                 </a-entity>
                 <Cursor3dp j_id="15" visible={cursor_vis}/>
@@ -618,7 +628,7 @@ const UR5e = (props)=>{
   )
 }
 
-const UR5e_Tool = (props)=>{
+const Model_Tool = (props)=>{
   const Gripperpos = {x:0,y:0,z:0.1037}
   const Pickpos = {x:0,y:0,z:0.09254}
   const {j7_rotate, joint_pos:{j7:j7pos}, cursor_vis, box_vis, edit_pos} = props
@@ -649,13 +659,13 @@ const UR5e_Tool = (props)=>{
 const Select_Robot = (props)=>{
   const {robotNameList, robotName, ...rotateProps} = props
   const visibletable = robotNameList.map(()=>false)
-  // const robotNameList = ["UR5e"]
+  // const robotNameList = ["Model"]
   const findindex = robotNameList.findIndex((e)=>e===robotName)
   if(findindex >= 0){
     visibletable[findindex] = true
   }
   return (<>
-    <UR5e visible={visibletable[0]} {...rotateProps}/>
+    <Model visible={visibletable[0]} {...rotateProps}/>
   </>)
 }
 

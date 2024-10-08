@@ -10,6 +10,7 @@ export default function Controller(props) {
   const {c_deg_x, c_deg_y, c_deg_z} = props
   const {wrist_rot_x,wrist_rot_y,wrist_rot_z} = props
   const {tool_rotate} = props
+  const {normalize180} = props
 
   const set_toolName = (e)=>{
     props.set_toolName(e.target.value)
@@ -103,22 +104,22 @@ export default function Controller(props) {
 
   const set_wrist_rot_x = (e)=>{
     let value = Number.parseFloat(e.target.value || 0)
-    props.set_wrist_rot_x(value)
+    props.set_wrist_rot_x(normalize180(value))
   }
 
   const set_wrist_rot_y = (e)=>{
     let value = Number.parseFloat(e.target.value || 0)
-    props.set_wrist_rot_y(value)
+    props.set_wrist_rot_y(normalize180(value))
   }
 
   const set_wrist_rot_z = (e)=>{
     let value = Number.parseFloat(e.target.value || 0)
-    props.set_wrist_rot_z(value)
+    props.set_wrist_rot_z(normalize180(value))
   }
 
   const set_tool_rotate = (e)=>{
     let value = Number.parseFloat(e.target.value || 0)
-    props.set_tool_rotate(value)
+    props.set_tool_rotate(normalize180(value))
   }
 
   const set_target_x = (e)=>{
@@ -203,19 +204,19 @@ export default function Controller(props) {
         <span>ARM DEG</span>
         <div className="row mb-0">
           <div className="col-md-4"><label htmlFor="wrist_rot_x_number" className="form-label"><span className="form-control-plaintext">wrist rot X</span></label></div>
-          <div className="col-md-8"><input type="number" className="form-control" id="wrist_rot_x_number" value={wrist_rot_x} onChange={set_wrist_rot_x} min={-179} max={180}/></div>
+          <div className="col-md-8"><input type="number" className="form-control" id="wrist_rot_x_number" value={wrist_rot_x} onChange={set_wrist_rot_x}/></div>
         </div>
         <div className="row mb-0">
           <div className="col-md-4"><label htmlFor="wrist_rot_y_number" className="form-label"><span className="form-control-plaintext">wrist rot Y</span></label></div>
-          <div className="col-md-8"><input type="number" className="form-control" id="wrist_rot_y_number" value={wrist_rot_y} onChange={set_wrist_rot_y} min={-179} max={180}/></div>
+          <div className="col-md-8"><input type="number" className="form-control" id="wrist_rot_y_number" value={wrist_rot_y} onChange={set_wrist_rot_y}/></div>
         </div>
         <div className="row mb-2">
           <div className="col-md-4"><label htmlFor="wrist_rot_z_number" className="form-label"><span className="form-control-plaintext">wrist rot Z</span></label></div>
-          <div className="col-md-8"><input type="number" className="form-control" id="wrist_rot_z_number" value={wrist_rot_z} onChange={set_wrist_rot_z} min={-179} max={180}/></div>
+          <div className="col-md-8"><input type="number" className="form-control" id="wrist_rot_z_number" value={wrist_rot_z} onChange={set_wrist_rot_z}/></div>
         </div>
         <div className="row mb-2">
           <div className="col-md-4"><label htmlFor="tool_rotate_number" className="form-label"><span className="form-control-plaintext">tool rotate</span></label></div>
-          <div className="col-md-8"><input type="number" className="form-control" id="tool_rotate_number" value={tool_rotate} onChange={set_tool_rotate} min={-179} max={180}/></div>
+          <div className="col-md-8"><input type="number" className="form-control" id="tool_rotate_number" value={tool_rotate} onChange={set_tool_rotate}/></div>
         </div>
         <div className="row mb-2">
         </div>
