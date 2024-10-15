@@ -139,23 +139,19 @@ export default function Home() {
   }, [j6_rotate])
 
   const get_j5_quaternion = (rot_x=wrist_rot_x,rot_y=wrist_rot_y,rot_z=wrist_rot_z)=>{
-    const wkq = new THREE.Quaternion()
-    wkq.multiply(new THREE.Quaternion().setFromAxisAngle(z_vec_base,toRadian(rot_z)))
-    wkq.multiply(new THREE.Quaternion().setFromAxisAngle(y_vec_base,toRadian(rot_y)))
-    wkq.multiply(new THREE.Quaternion().setFromAxisAngle(x_vec_base,toRadian(rot_x)))
-    return wkq
+    return new THREE.Quaternion().multiply(
+      new THREE.Quaternion().setFromAxisAngle(z_vec_base,toRadian(rot_z))
+    ).multiply(
+      new THREE.Quaternion().setFromAxisAngle(y_vec_base,toRadian(rot_y))
+    ).multiply(
+      new THREE.Quaternion().setFromAxisAngle(x_vec_base,toRadian(rot_x))
+    )
   }
 
   const get_p21_pos = ()=>{
     const j5q = get_j5_quaternion()
-    const p21_pos = q_to_pos_z(j5q, p15_16_len)
+    const p21_pos = quaternionToRotation(j5q,{x:0,y:0,z:p15_16_len})
     return p21_pos
-  }
-
-  const get_p22_pos = ()=>{
-    const j5q = get_j5_quaternion()
-    const p22_pos = q_to_pos_y(j5q, joint_pos.j5.y)
-    return p22_pos
   }
 
   React.useEffect(() => {
@@ -167,35 +163,42 @@ export default function Home() {
     }
   },[wrist_rot_x,wrist_rot_y,wrist_rot_z])
 
-  const q_to_pos_z = (quaternion,length,source_pos={x:0,y:0,z:0})=>{
-    const vx = 2*(quaternion.x*quaternion.z + quaternion.w*quaternion.y)
-    const vy = 2*(quaternion.y*quaternion.z - quaternion.w*quaternion.x)
-    const vz = quaternion.w**2 - quaternion.x**2 - quaternion.y**2 + quaternion.z**2
-    const resultpos = {
-      x:round((length*vx) + source_pos.x),
-      y:round((length*vy) + source_pos.y),
-      z:round((length*vz) + source_pos.z)
-    }
-    return resultpos
+  const quaternionToRotation = (q,v)=>{
+    const q_original = new THREE.Quaternion(q.x, q.y, q.z, q.w)
+    const q_conjugate = new THREE.Quaternion(q.x, q.y, q.z, q.w).conjugate()
+    const q_vector = new THREE.Quaternion(v.x, v.y, v.z, 0)
+    const result = q_original.multiply(q_vector).multiply(q_conjugate)
+    return new THREE.Vector3(round(result.x),round(result.y),round(result.z))
   }
 
-  const q_to_pos_y = (quaternion,length,source_pos={x:0,y:0,z:0})=>{
-    const vx = 2*(quaternion.x*quaternion.y - quaternion.w*quaternion.z)
-    const vz = 2*(quaternion.z*quaternion.y + quaternion.w*quaternion.x)
-    const vy = quaternion.w**2 - quaternion.x**2 - quaternion.z**2 + quaternion.y**2
-    const resultpos = {
-      x:round((length*vx) + source_pos.x),
-      y:round((length*vy) + source_pos.y),
-      z:round((length*vz) + source_pos.z)
+  const quaternionToAngle = (q)=>{
+    const wk_angle = 2 * Math.acos(q.w)
+    if(wk_angle === 0){
+      return {angle:round(toAngle(wk_angle)),axis:new THREE.Vector3(0,0,0)}
     }
-    return resultpos
+    const angle = round(toAngle(wk_angle))
+    const sinHalfAngle = Math.sqrt(1 - q.w * q.w)
+    if (sinHalfAngle > 0) {
+      const axisX = round(q.x / sinHalfAngle)
+      const axisY = round(q.y / sinHalfAngle)
+      const axisZ = round(q.z / sinHalfAngle)
+      return {angle,axis:new THREE.Vector3(axisX,axisY,axisZ)}
+    }else{
+      return {angle,axis:new THREE.Vector3(0,0,0)}
+    }
+  }
+
+  const quaternionDifference = (q1,q2)=>{
+    return new THREE.Quaternion(q1.x, q1.y, q1.z, q1.w).invert().multiply(
+      new THREE.Quaternion(q2.x, q2.y, q2.z, q2.w)
+    )
   }
 
   React.useEffect(() => {
     if(rendered){
       target_update(true)
     }
-  },[target,tool_rotate,p15_16_len])
+  },[target,tool_rotate])
 
   const target_update = (target_move)=>{
     const p21_pos = get_p21_pos()
@@ -242,15 +245,21 @@ export default function Home() {
       wk_j1_rotate = j1_rotate
     }
 
+    const p14q = new THREE.Quaternion().multiply(
+      new THREE.Quaternion().setFromAxisAngle(y_vec_base,toRadian(wk_j1_rotate))
+    )
     const direction_offset = normalize180(wrist_direction - wk_j1_rotate)
     const distance_target_t15 = round(distance({x:target.x,y:0,z:target.z},{x:target15.x,y:0,z:target15.z}))
     const elevation_target_t15 =  target15.y - target.y
-    const {a:teihen} = calc_side_1(distance_target_t15,direction_offset)
-    const {s:syahen,k:kakudo} = calc_side_2(teihen, elevation_target_t15)
+    const {a:j1_extension} = calc_side_1(distance_target_t15,direction_offset)
+    const {k:kakudo} = calc_side_2(j1_extension, elevation_target_t15)
     const wk_j4_rotate_sabun = normalize180(90 - kakudo)
 
-    const distance_target_t15_2 = round(distance(target,target15))
-    const {k:wk_j5_kakudo} = calc_side_4(distance_target_t15_2,syahen)
+    p14q.multiply(
+      new THREE.Quaternion().setFromAxisAngle(x_vec_base,toRadian(wk_j4_rotate_sabun))
+    )
+    const p14_extension_pos = quaternionToRotation(p14q,{x:0,y:0,z:p15_16_len})
+    const wk_j5_kakudo = round(toAngle(p14_extension_pos.angleTo(get_p21_pos())))
 
     let wk_j5_rotate = normalize180(wk_j5_kakudo*(direction_offset<0?-1:1))
     if(isNaN(wk_j5_rotate)){
@@ -260,37 +269,20 @@ export default function Home() {
     }else{
       set_j5_rotate(wk_j5_rotate)
     }
+    p14q.multiply(
+      new THREE.Quaternion().setFromAxisAngle(y_vec_base,toRadian(wk_j5_rotate))
+    )
+    const j5q = get_j5_quaternion()
+    const p14_j5_diff = quaternionToAngle(quaternionDifference(p14q,j5q))
+    const wk_j6_rotate = p14_j5_diff.angle * ((p14_j5_diff.axis.z < 0)?-1:1)
+    set_j6_rotate(normalize180(round(wk_j6_rotate + tool_rotate)))
 
-    const {a:p14_offset_y,b:p14_offset_distance} = calc_side_1(joint_pos.j5.y,wk_j4_rotate_sabun)
-    const {a:p14_offset_z,b:p14_offset_x} = calc_side_1(p14_offset_distance,wk_j1_rotate)
+    const p14_offset_pos = quaternionToRotation(p14q,{x:0,y:joint_pos.j5.y,z:0})
 
     const target14 = {...target15}
-    target14.x -= p14_offset_x
-    target14.y -= p14_offset_y
-    target14.z -= p14_offset_z
-
-    const p22_pos_offset = get_p22_pos()
-    const wk_vector1 = new THREE.Vector3(p22_pos_offset.x,p22_pos_offset.y,p22_pos_offset.z).normalize()
-    const wk_vector2 = new THREE.Vector3(p14_offset_x,p14_offset_y,p14_offset_z).normalize()
-    const wk_j6_reset_angle = round(toAngle(wk_vector1.angleTo(wk_vector2)))
-
-    const j5q = get_j5_quaternion()
-    const wk_j5q_1 = new THREE.Quaternion().copy(j5q)
-    const wk_j5q_2 = new THREE.Quaternion().copy(j5q)
-
-    wk_j5q_1.multiply(new THREE.Quaternion().setFromAxisAngle(z_vec_base,toRadian(wk_j6_reset_angle)))
-    const wk_pos_1 = q_to_pos_y(wk_j5q_1,joint_pos.j5.y)
-    const wk_angle2 = round(toAngle(wk_vector2.angleTo(new THREE.Vector3(wk_pos_1.x,wk_pos_1.y,wk_pos_1.z).normalize())))
-
-    
-    wk_j5q_2.multiply(new THREE.Quaternion().setFromAxisAngle(z_vec_base,toRadian(wk_j6_reset_angle * -1)))
-    const wk_pos_2 = q_to_pos_y(wk_j5q_2,joint_pos.j5.y)
-    const wk_angle3 = round(toAngle(wk_vector2.angleTo(new THREE.Vector3(wk_pos_2.x,wk_pos_2.y,wk_pos_2.z).normalize())))
-
-    const sign = (wk_angle2 < wk_angle3)?-1:1
-    const wk_j6_rotate = wk_j6_reset_angle * sign
-
-    set_j6_rotate(normalize180(round(wk_j6_rotate + tool_rotate)))
+    target14.x -= p14_offset_pos.x
+    target14.y -= p14_offset_pos.y
+    target14.z -= p14_offset_pos.z
 
     const syahen_t14 = round(distance({x:0,y:0,z:0},{x:target14.x,y:0,z:target14.z}))
     if(syahen_t14 < joint_pos.j5.x){
@@ -353,7 +345,6 @@ export default function Home() {
     if(isNaN(wk_j4_rotate)){
       console.log("wk_j4_rotate 指定可能範囲外！")
       dsp_message = "wk_j4_rotate 指定可能範囲外！"
-      wk_j4_rotate = j4_rotate
     }else{
       set_j4_rotate(wk_j4_rotate)
     }
