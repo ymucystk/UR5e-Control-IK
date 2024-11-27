@@ -106,19 +106,19 @@ export default function Home() {
         m10:controller_mtx[1], m11:controller_mtx[5], m12:controller_mtx[9],
         m20:controller_mtx[2], m21:controller_mtx[6], m22:controller_mtx[10],
       }
-      //回転順 YZX
-      const theta_z = Math.asin(mtx.m10)
-      let theta_y = 0
-      if(Math.cos(theta_z) !== 0){
-        theta_y = Math.atan((mtx.m20*-1/mtx.m00))
-      }else{
-        theta_y = Math.atan((mtx.m02/mtx.m22))
-      }
+      //回転順 ZYX
+      const theta_y = Math.asin(mtx.m20*-1)
       let theta_x = 0
-      if(Math.cos(theta_z) !== 0){
-        theta_x = Math.atan((mtx.m12*-1/mtx.m11))
+      if(Math.cos(theta_y) !== 0){
+        theta_x = Math.atan((mtx.m21/mtx.m22))
       }else{
         theta_x = 0
+      }
+      let theta_z = 0
+      if(Math.cos(theta_y) !== 0){
+        theta_z = Math.atan((mtx.m10/mtx.m00))
+      }else{
+        theta_z = Math.atan((mtx.m01*-1/mtx.m11))
       }
       console.log(`x:${round(toAngle(theta_x))}, y:${round(toAngle(theta_y))}, z:${round(toAngle(theta_z))}`)
       set_wrist_rot_x(round(toAngle(theta_x)))
