@@ -36,6 +36,10 @@ export default function Home() {
   const [p22_object,set_p22_object] = React.useState()
   const [p51_object,set_p51_object] = React.useState()
 
+  const [controller_object,set_controller_object] = React.useState()
+  const [controller_mtx,set_controller_mtx] = React.useState(new Array(16))
+  const [trigger_on,set_trigger_on] = React.useState(false)
+
   const [p15_pos,set_p15_pos] = React.useState({x:0,y:0,z:0})
   const [p16_pos,set_p16_pos] = React.useState({x:0,y:0,z:0})
 
@@ -84,6 +88,46 @@ export default function Home() {
     }, 10);
     return function(){clearInterval(intervalId)};
   }, [now]);
+
+  React.useEffect(() => {
+    if(rendered && trigger_on){
+      const wk_mtx = new THREE.Matrix4()
+      wk_mtx.elements = controller_mtx
+      const controller_pos = new THREE.Vector4(0,0,0,1).applyMatrix4(wk_mtx)
+      console.log(`controller_pos:{x:${round(controller_pos.x)}, y:${round(controller_pos.y)}, z:${round(controller_pos.z)}}`)
+      set_target({x:round(controller_pos.x),y:round(controller_pos.y),z:round(controller_pos.z)})
+    }
+  },[controller_mtx[12],controller_mtx[13],controller_mtx[14]])
+
+  React.useEffect(() => {
+    if(rendered && !trigger_on){
+      const mtx = {
+        m00:controller_mtx[0], m01:controller_mtx[4], m02:controller_mtx[8],
+        m10:controller_mtx[1], m11:controller_mtx[5], m12:controller_mtx[9],
+        m20:controller_mtx[2], m21:controller_mtx[6], m22:controller_mtx[10],
+      }
+      //回転順 YZX
+      const theta_z = Math.asin(mtx.m10)
+      let theta_y = 0
+      if(Math.cos(theta_z) !== 0){
+        theta_y = Math.atan((mtx.m20*-1/mtx.m00))
+      }else{
+        theta_y = Math.atan((mtx.m02/mtx.m22))
+      }
+      let theta_x = 0
+      if(Math.cos(theta_z) !== 0){
+        theta_x = Math.atan((mtx.m12*-1/mtx.m11))
+      }else{
+        theta_x = 0
+      }
+      console.log(`x:${round(toAngle(theta_x))}, y:${round(toAngle(theta_y))}, z:${round(toAngle(theta_z))}`)
+      set_wrist_rot_x(round(toAngle(theta_x)))
+      set_wrist_rot_y(round(toAngle(theta_y)))
+      set_wrist_rot_z(round(toAngle(theta_z)))
+    }
+  },[controller_mtx[0],controller_mtx[1],controller_mtx[2],
+  controller_mtx[4],controller_mtx[5],controller_mtx[6],
+  controller_mtx[8],controller_mtx[9],controller_mtx[10]])
 
   React.useEffect(() => {
     if(rendered){
@@ -424,6 +468,8 @@ export default function Home() {
       set_p16_pos(p16_pos)
 
       set_p15_16_len(distance(p15_pos,p16_pos))
+
+      set_controller_mtx(controller_object.matrixWorld.elements)
     }
   },[now])
 
@@ -511,6 +557,21 @@ export default function Home() {
             }
           }
         });
+        AFRAME.registerComponent('vr-controller-right', {
+          init: function () {
+            set_controller_object(this.el.object3D)
+            this.el.object3D.rotation.order = "XYZ"
+            console.log(this.el.object3D)
+            this.el.addEventListener('triggerdown', (evt)=>{
+              set_trigger_on(true)
+              console.log(evt)
+            });
+            this.el.addEventListener('triggerup', (evt)=>{
+              set_trigger_on(false)
+              console.log(evt)
+            });
+          }
+        });
       }
     }
   }, [typeof window])
@@ -538,6 +599,7 @@ export default function Home() {
     return (
     <>
       <a-scene>
+        <a-entity oculus-touch-controls="hand: right" vr-controller-right visible={false}></a-entity>
         <a-plane position="0 0 0" rotation="-90 0 0" width="10" height="10" color="#7BC8A4"></a-plane>
         <Assets/>
         <Select_Robot {...robotProps}/>
