@@ -79,7 +79,7 @@ export default function Home() {
     j7:{x:0,y:0,z:0.15},
   }
 
-  const [target,set_target] = React.useState({x:0.3,y:0.6,z:0.3})
+  const [target,set_target] = React.useState({x:0.3,y:0.65,z:0.3})
   const [p15_16_len,set_p15_16_len] = React.useState(joint_pos.j7.z)
   const [p14_maxlen,set_p14_maxlen] = React.useState(0)
  
@@ -575,14 +575,13 @@ export default function Home() {
             this.el.addEventListener('enter-vr', ()=>{
               set_vr_mode(true)
               console.log('enter-vr')
+              set_target({x:target.x,y:target.y,z:target.z*-1})
             });
             this.el.addEventListener('exit-vr', ()=>{
               set_vr_mode(false)
               console.log('exit-vr')
             });
-
           }
-
         });
       }
     }
@@ -622,7 +621,7 @@ export default function Home() {
         <a-entity light="type: directional; color: #EEE; intensity: 0.7" position="1 1 1"></a-entity>
         <a-entity light="type: directional; color: #EEE; intensity: 0.7" position="-1 1 1"></a-entity>
         <a-entity id="rig" position={`${c_pos_x} ${c_pos_y} ${c_pos_z}`} rotation={`${c_deg_x} ${c_deg_y} ${c_deg_z}`}>
-          <a-camera id="camera" cursor="rayOrigin: mouse;" position="0 0 0"></a-camera>
+          <a-camera id="camera" wasd-controls-enabled={false} look-controls-enabled={false} position="0 0 0"></a-camera>
         </a-entity>
         <a-sphere position={edit_pos(target)} scale="0.012 0.012 0.012" color="yellow" visible={true}></a-sphere>
         <a-box position={edit_pos(test_pos)} scale="0.03 0.03 0.03" color="green" visible={box_vis}></a-box>
