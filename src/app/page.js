@@ -39,6 +39,7 @@ export default function Home() {
   const [controller_object,set_controller_object] = React.useState()
   const [controller_mtx,set_controller_mtx] = React.useState(new Array(16))
   const [trigger_on,set_trigger_on] = React.useState(false)
+  const [vr_mode,set_vr_mode] = React.useState(false)
 
   const [p15_pos,set_p15_pos] = React.useState({x:0,y:0,z:0})
   const [p16_pos,set_p16_pos] = React.useState({x:0,y:0,z:0})
@@ -78,7 +79,7 @@ export default function Home() {
     j7:{x:0,y:0,z:0.15},
   }
 
-  const [target,set_target] = React.useState({x:0.3,y:0.7,z:0.3})
+  const [target,set_target] = React.useState({x:0.3,y:0.6,z:0.3})
   const [p15_16_len,set_p15_16_len] = React.useState(joint_pos.j7.z)
   const [p14_maxlen,set_p14_maxlen] = React.useState(0)
  
@@ -90,7 +91,7 @@ export default function Home() {
   }, [now]);
 
   React.useEffect(() => {
-    if(rendered && trigger_on){
+    if(rendered && vr_mode && trigger_on){
       const wk_mtx = new THREE.Matrix4()
       wk_mtx.elements = controller_mtx
       const controller_pos = new THREE.Vector4(0,0,0,1).applyMatrix4(wk_mtx)
@@ -100,11 +101,18 @@ export default function Home() {
   },[controller_mtx[12],controller_mtx[13],controller_mtx[14]])
 
   React.useEffect(() => {
-    if(rendered && !trigger_on){
+    if(rendered && vr_mode && !trigger_on){
+      const wk_mtx = new THREE.Matrix4()
+      wk_mtx.elements = controller_mtx
+      wk_mtx.multiply(
+        new THREE.Matrix4().makeRotationY(toRadian(180))
+      ).multiply(
+        new THREE.Matrix4().makeRotationZ(toRadian(180))
+      )
       const mtx = {
-        m00:controller_mtx[0], m01:controller_mtx[4], m02:controller_mtx[8],
-        m10:controller_mtx[1], m11:controller_mtx[5], m12:controller_mtx[9],
-        m20:controller_mtx[2], m21:controller_mtx[6], m22:controller_mtx[10],
+        m00:wk_mtx.elements[0], m01:wk_mtx.elements[4], m02:wk_mtx.elements[8],
+        m10:wk_mtx.elements[1], m11:wk_mtx.elements[5], m12:wk_mtx.elements[9],
+        m20:wk_mtx.elements[2], m21:wk_mtx.elements[6], m22:wk_mtx.elements[10],
       }
       //回転順 ZYX
       const theta_x = Math.atan2(mtx.m21,mtx.m22)
@@ -562,6 +570,20 @@ export default function Home() {
             });
           }
         });
+        AFRAME.registerComponent('scene', {
+          init: function () {
+            this.el.addEventListener('enter-vr', ()=>{
+              set_vr_mode(true)
+              console.log('enter-vr')
+            });
+            this.el.addEventListener('exit-vr', ()=>{
+              set_vr_mode(false)
+              console.log('exit-vr')
+            });
+
+          }
+
+        });
       }
     }
   }, [typeof window])
@@ -588,7 +610,7 @@ export default function Home() {
   if(rendered){
     return (
     <>
-      <a-scene>
+      <a-scene scene>
         <a-entity oculus-touch-controls="hand: right" vr-controller-right visible={false}></a-entity>
         <a-plane position="0 0 0" rotation="-90 0 0" width="10" height="10" color="#7BC8A4"></a-plane>
         <Assets/>
