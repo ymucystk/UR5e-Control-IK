@@ -25,24 +25,14 @@ export default function Home() {
   const [j5_object,set_j5_object] = React.useState()
   const [j6_object,set_j6_object] = React.useState()
 
-  const [p11_object,set_p11_object] = React.useState()
-  const [p12_object,set_p12_object] = React.useState()
-  const [p13_object,set_p13_object] = React.useState()
-  const [p14_object,set_p14_object] = React.useState()
   const [p15_object,set_p15_object] = React.useState()
   const [p16_object,set_p16_object] = React.useState()
-  const [p20_object,set_p20_object] = React.useState()
-  const [p21_object,set_p21_object] = React.useState()
-  const [p22_object,set_p22_object] = React.useState()
   const [p51_object,set_p51_object] = React.useState()
 
   const [controller_object,set_controller_object] = React.useState()
   const [controller_mtx,set_controller_mtx] = React.useState(new Array(16))
   const [trigger_on,set_trigger_on] = React.useState(false)
   const [vr_mode,set_vr_mode] = React.useState(false)
-
-  const [p15_pos,set_p15_pos] = React.useState({x:0,y:0,z:0})
-  const [p16_pos,set_p16_pos] = React.useState({x:0,y:0,z:0})
 
   const [test_pos,set_test_pos] = React.useState({x:0,y:0,z:0})
 
@@ -459,11 +449,9 @@ export default function Home() {
     if(rendered){
       const box15_result = getposq(p15_object)
       const p15_pos = getpos(box15_result.position)
-      set_p15_pos(p15_pos)
 
       const box16_result = getposq(p16_object)
       const p16_pos = getpos(box16_result.position)
-      set_p16_pos(p16_pos)
 
       set_p15_16_len(distance(p15_pos,p16_pos))
 
@@ -518,32 +506,11 @@ export default function Home() {
             if(this.data === 6){
               set_j6_object(this.el.object3D)
             }else
-            if(this.data === 11){
-              set_p11_object(this.el.object3D)
-            }else
-            if(this.data === 12){
-              set_p12_object(this.el.object3D)
-            }else
-            if(this.data === 13){
-              set_p13_object(this.el.object3D)
-            }else
-            if(this.data === 14){
-              set_p14_object(this.el.object3D)
-            }else
             if(this.data === 15){
               set_p15_object(this.el.object3D)
             }else
             if(this.data === 16){
               set_p16_object(this.el.object3D)
-            }else
-            if(this.data === 20){
-              set_p20_object(this.el.object3D)
-            }else
-            if(this.data === 21){
-              set_p21_object(this.el.object3D)
-            }else
-            if(this.data === 22){
-              set_p22_object(this.el.object3D)
             }else
             if(this.data === 51){
               set_p51_object(this.el.object3D)
