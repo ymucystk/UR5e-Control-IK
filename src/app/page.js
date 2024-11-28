@@ -107,19 +107,9 @@ export default function Home() {
         m20:controller_mtx[2], m21:controller_mtx[6], m22:controller_mtx[10],
       }
       //回転順 ZYX
-      const theta_y = Math.asin(mtx.m20*-1)
-      let theta_x = 0
-      if(Math.cos(theta_y) !== 0){
-        theta_x = Math.atan((mtx.m21/mtx.m22))
-      }else{
-        theta_x = 0
-      }
-      let theta_z = 0
-      if(Math.cos(theta_y) !== 0){
-        theta_z = Math.atan((mtx.m10/mtx.m00))
-      }else{
-        theta_z = Math.atan((mtx.m01*-1/mtx.m11))
-      }
+      const theta_x = Math.atan2(mtx.m21,mtx.m22)
+      const theta_y = Math.asin(mtx.m20)*-1
+      const theta_z = Math.atan2(mtx.m10,mtx.m00)
       console.log(`x:${round(toAngle(theta_x))}, y:${round(toAngle(theta_y))}, z:${round(toAngle(theta_z))}`)
       set_wrist_rot_x(round(toAngle(theta_x)))
       set_wrist_rot_y(round(toAngle(theta_y)))
