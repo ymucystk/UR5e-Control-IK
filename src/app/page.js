@@ -32,6 +32,8 @@ export default function Home() {
   const [controller_object,set_controller_object] = React.useState()
   const [controller_mtx,set_controller_mtx] = React.useState(new Array(16))
   const [trigger_on,set_trigger_on] = React.useState(false)
+  const [start_pos,set_start_pos] = React.useState()
+  const [save_target,set_save_target] = React.useState()
   const [vr_mode,set_vr_mode] = React.useState(false)
 
   const [test_pos,set_test_pos] = React.useState({x:0,y:0,z:0})
@@ -85,8 +87,16 @@ export default function Home() {
       const wk_mtx = new THREE.Matrix4()
       wk_mtx.elements = controller_mtx
       const controller_pos = new THREE.Vector4(0,0,0,1).applyMatrix4(wk_mtx)
-      console.log(`controller_pos:{x:${round(controller_pos.x)}, y:${round(controller_pos.y)}, z:${round(controller_pos.z)}}`)
-      set_target({x:round(controller_pos.x),y:round(controller_pos.y),z:round(controller_pos.z)})
+      const move_pos = pos_sub(start_pos,controller_pos)
+      let target_pos
+      if(save_target === undefined){
+        set_save_target(target)
+        target_pos = pos_sub(target,move_pos)
+      }else{
+        target_pos = pos_sub(save_target,move_pos)
+      }
+      console.log(`controller_pos:{x:${round(target_pos.x)}, y:${round(target_pos.y)}, z:${round(target_pos.z)}}`)
+      set_target({x:round(target_pos.x),y:round(target_pos.y),z:round(target_pos.z)})
     }
   },[controller_mtx[12],controller_mtx[13],controller_mtx[14]])
 
@@ -226,6 +236,10 @@ export default function Home() {
     )
   }
 
+  const pos_sub = (pos1, pos2)=>{
+    return {x:(pos1.x - pos2.x), y:(pos1.y - pos2.y), z:(pos1.z - pos2.z)}
+  }
+
   React.useEffect(() => {
     if(rendered){
       target_update(true)
@@ -251,6 +265,18 @@ export default function Home() {
       return
     }
     set_wrist_degree({direction,angle})
+
+    const wk_mtx = new THREE.Matrix4().makeRotationFromQuaternion(get_j5_quaternion())
+    const mtx = {
+      m00:wk_mtx.elements[0], m01:wk_mtx.elements[4], m02:wk_mtx.elements[8],
+      m10:wk_mtx.elements[1], m11:wk_mtx.elements[5], m12:wk_mtx.elements[9],
+      m20:wk_mtx.elements[2], m21:wk_mtx.elements[6], m22:wk_mtx.elements[10],
+    }
+    //回転順 ZYX
+    const theta_x = Math.atan2(mtx.m21,mtx.m22)
+    const theta_y = Math.asin(mtx.m20)*-1
+    const theta_z = Math.atan2(mtx.m10,mtx.m00)
+    console.log(`x:${round(toAngle(theta_x))}, y:${round(toAngle(theta_y))}, z:${round(toAngle(theta_z))}`)
 
     const p15_16_offset_pos = {...p21_pos}
     const new_p15_pos = {x:(target.x - p15_16_offset_pos.x),y:(target.y - p15_16_offset_pos.y),z:(target.z - p15_16_offset_pos.z)}
@@ -409,7 +435,7 @@ export default function Home() {
   }
 
   const getposq = (parts_obj)=>{
-    const mat = parts_obj.matrixWorld
+    const mat = parts_obj.matrix  //matrixWorld
     let position = new THREE.Vector3();
     let quaternion = new THREE.Quaternion();
     let scale = new THREE.Vector3()
@@ -455,7 +481,7 @@ export default function Home() {
 
       set_p15_16_len(distance(p15_pos,p16_pos))
 
-      set_controller_mtx(controller_object.matrixWorld.elements)
+      set_controller_mtx(controller_object.matrix.elements)
     }
   },[now])
 
@@ -528,12 +554,13 @@ export default function Home() {
             this.el.object3D.rotation.order = "XYZ"
             console.log(this.el.object3D)
             this.el.addEventListener('triggerdown', (evt)=>{
+              const wk_start_pos = new THREE.Vector4(0,0,0,1).applyMatrix4(this.el.object3D.matrix)
+              set_start_pos(wk_start_pos)
               set_trigger_on(true)
-              console.log(evt)
             });
             this.el.addEventListener('triggerup', (evt)=>{
+              set_save_target(undefined)
               set_trigger_on(false)
-              console.log(evt)
             });
           }
         });
