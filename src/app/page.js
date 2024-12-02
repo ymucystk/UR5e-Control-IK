@@ -67,7 +67,7 @@ export default function Home() {
     j4:{x:0,y:0.3922,z:0},
     j5:{x:0.1325,y:0.1008,z:0},
     j6:{x:0,y:0,z:0},
-    j7:{x:0,y:0,z:0.15},
+    j7:{x:0,y:0,z:0.12},
   }
 
   const [target,set_target] = React.useState({x:0.3,y:0.65,z:0.3})
@@ -686,11 +686,11 @@ const Model_Tool = (props)=>{
     <a-entity gltf-model="#GripperBase" position={edit_pos(Gripperpos)} rotation={`0 0 0`}>
     <a-entity gltf-model="#GripperFinger1" position="0 0 0" rotation={`0 ${j7_rotate} 0`}></a-entity>
     <a-entity gltf-model="#GripperFinger2" position="0 0 0" rotation={`0 ${-j7_rotate} 0`}></a-entity>  
-      <Cursor3dp j_id="16" pos={{x:0,y:0,z:0.14}} visible={cursor_vis}/>
+      <Cursor3dp j_id="16" pos={{x:0,y:0,z:0.22}} visible={cursor_vis}/>
       <a-box color="yellow" scale="0.02 0.02 0.02" position={edit_pos({x:0,y:0,z:0.14})} visible={box_vis}></a-box>
     </a-entity>,
     <a-entity gltf-model="#E-Pick" position={edit_pos(Pickpos)} rotation={`0 0 0`}>
-      <Cursor3dp j_id="16" pos={{x:0,y:0,z:0.15}} visible={cursor_vis}/>
+      <Cursor3dp j_id="16" pos={{x:0,y:0,z:0.24}} visible={cursor_vis}/>
       <a-box color="yellow" scale="0.02 0.02 0.02" position={edit_pos({x:0,y:0,z:0.15})} visible={box_vis}></a-box>
     </a-entity>
   ]
