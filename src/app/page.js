@@ -29,8 +29,7 @@ export default function Home() {
   const [p16_object,set_p16_object] = React.useState()
   const [p51_object,set_p51_object] = React.useState()
 
-  const [controller_object,set_controller_object] = React.useState()
-  const [controller_mtx,set_controller_mtx] = React.useState(new Array(16))
+  const [controller_object,set_controller_object] = React.useState({matrix:{elements:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}})
   const [trigger_on,set_trigger_on] = React.useState(false)
   const [start_pos,set_start_pos] = React.useState()
   const [save_target,set_save_target] = React.useState()
@@ -84,10 +83,7 @@ export default function Home() {
 
   React.useEffect(() => {
     if(rendered && vr_mode && trigger_on){
-      const wk_mtx = new THREE.Matrix4()
-      wk_mtx.elements = controller_mtx
-      const controller_pos = new THREE.Vector4(0,0,0,1).applyMatrix4(wk_mtx)
-      const move_pos = pos_sub(start_pos,controller_pos)
+      const move_pos = pos_sub(start_pos,controller_object.position)
       let target_pos
       if(save_target === undefined){
         set_save_target(target)
@@ -95,19 +91,25 @@ export default function Home() {
       }else{
         target_pos = pos_sub(save_target,move_pos)
       }
-      console.log(`controller_pos:{x:${round(target_pos.x)}, y:${round(target_pos.y)}, z:${round(target_pos.z)}}`)
       set_target({x:round(target_pos.x),y:round(target_pos.y),z:round(target_pos.z)})
     }
-  },[controller_mtx[12],controller_mtx[13],controller_mtx[14]])
+  },[controller_object.matrix.elements[12],controller_object.matrix.elements[13],controller_object.matrix.elements[14]])
 
   React.useEffect(() => {
     if(rendered && vr_mode && !trigger_on){
-      const wk_mtx = new THREE.Matrix4()
-      wk_mtx.elements = controller_mtx
-      wk_mtx.multiply(
-        new THREE.Matrix4().makeRotationY(toRadian(180))
+      const obj_rotation = controller_object.rotation
+      const wk_mtx = new THREE.Matrix4().multiply(
+        new THREE.Matrix4().makeRotationZ(obj_rotation.z)
+      ).multiply(
+        new THREE.Matrix4().makeRotationY(obj_rotation.y)
+      ).multiply(
+        new THREE.Matrix4().makeRotationX(obj_rotation.x)
       ).multiply(
         new THREE.Matrix4().makeRotationZ(toRadian(180))
+      ).multiply(
+        new THREE.Matrix4().makeRotationY(toRadian(180))
+      ).multiply(
+        new THREE.Matrix4().makeRotationX(toRadian(0))
       )
       const mtx = {
         m00:wk_mtx.elements[0], m01:wk_mtx.elements[4], m02:wk_mtx.elements[8],
@@ -118,14 +120,13 @@ export default function Home() {
       const theta_x = Math.atan2(mtx.m21,mtx.m22)
       const theta_y = Math.asin(mtx.m20)*-1
       const theta_z = Math.atan2(mtx.m10,mtx.m00)
-      console.log(`x:${round(toAngle(theta_x))}, y:${round(toAngle(theta_y))}, z:${round(toAngle(theta_z))}`)
       set_wrist_rot_x(round(toAngle(theta_x)))
       set_wrist_rot_y(round(toAngle(theta_y)))
       set_wrist_rot_z(round(toAngle(theta_z)))
     }
-  },[controller_mtx[0],controller_mtx[1],controller_mtx[2],
-  controller_mtx[4],controller_mtx[5],controller_mtx[6],
-  controller_mtx[8],controller_mtx[9],controller_mtx[10]])
+  },[controller_object.matrix.elements[0],controller_object.matrix.elements[1],controller_object.matrix.elements[2],
+  controller_object.matrix.elements[4],controller_object.matrix.elements[5],controller_object.matrix.elements[6],
+  controller_object.matrix.elements[8],controller_object.matrix.elements[9],controller_object.matrix.elements[10]])
 
   React.useEffect(() => {
     if(rendered){
@@ -265,18 +266,6 @@ export default function Home() {
       return
     }
     set_wrist_degree({direction,angle})
-
-    const wk_mtx = new THREE.Matrix4().makeRotationFromQuaternion(get_j5_quaternion())
-    const mtx = {
-      m00:wk_mtx.elements[0], m01:wk_mtx.elements[4], m02:wk_mtx.elements[8],
-      m10:wk_mtx.elements[1], m11:wk_mtx.elements[5], m12:wk_mtx.elements[9],
-      m20:wk_mtx.elements[2], m21:wk_mtx.elements[6], m22:wk_mtx.elements[10],
-    }
-    //回転順 ZYX
-    const theta_x = Math.atan2(mtx.m21,mtx.m22)
-    const theta_y = Math.asin(mtx.m20)*-1
-    const theta_z = Math.atan2(mtx.m10,mtx.m00)
-    console.log(`x:${round(toAngle(theta_x))}, y:${round(toAngle(theta_y))}, z:${round(toAngle(theta_z))}`)
 
     const p15_16_offset_pos = {...p21_pos}
     const new_p15_pos = {x:(target.x - p15_16_offset_pos.x),y:(target.y - p15_16_offset_pos.y),z:(target.z - p15_16_offset_pos.z)}
@@ -480,8 +469,6 @@ export default function Home() {
       const p16_pos = getpos(box16_result.position)
 
       set_p15_16_len(distance(p15_pos,p16_pos))
-
-      set_controller_mtx(controller_object.matrix.elements)
     }
   },[now])
 
@@ -549,10 +536,10 @@ export default function Home() {
           }
         });
         AFRAME.registerComponent('vr-controller-right', {
+          schema: {type: 'string', default: ''},
           init: function () {
             set_controller_object(this.el.object3D)
-            this.el.object3D.rotation.order = "XYZ"
-            console.log(this.el.object3D)
+            this.el.object3D.rotation.order = "ZYX"
             this.el.addEventListener('triggerdown', (evt)=>{
               const wk_start_pos = new THREE.Vector4(0,0,0,1).applyMatrix4(this.el.object3D.matrix)
               set_start_pos(wk_start_pos)
@@ -565,6 +552,7 @@ export default function Home() {
           }
         });
         AFRAME.registerComponent('scene', {
+          schema: {type: 'string', default: ''},
           init: function () {
             this.el.addEventListener('enter-vr', ()=>{
               set_vr_mode(true)
