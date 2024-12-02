@@ -29,7 +29,7 @@ export default function Home() {
   const [p16_object,set_p16_object] = React.useState()
   const [p51_object,set_p51_object] = React.useState()
 
-  const [controller_object,set_controller_object] = React.useState({matrix:{elements:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}})
+  const [controller_object,set_controller_object] = React.useState({position:{x:0,y:0,z:0},rotation:{x:0,y:0,z:0,order:''}})
   const [trigger_on,set_trigger_on] = React.useState(false)
   const [start_pos,set_start_pos] = React.useState()
   const [save_target,set_save_target] = React.useState()
@@ -93,7 +93,7 @@ export default function Home() {
       }
       set_target({x:round(target_pos.x),y:round(target_pos.y),z:round(target_pos.z)})
     }
-  },[controller_object.matrix.elements[12],controller_object.matrix.elements[13],controller_object.matrix.elements[14]])
+  },[controller_object.position.x,controller_object.position.y,controller_object.position.z])
 
   React.useEffect(() => {
     if(rendered && vr_mode && !trigger_on){
@@ -124,9 +124,7 @@ export default function Home() {
       set_wrist_rot_y(round(toAngle(theta_y)))
       set_wrist_rot_z(round(toAngle(theta_z)))
     }
-  },[controller_object.matrix.elements[0],controller_object.matrix.elements[1],controller_object.matrix.elements[2],
-  controller_object.matrix.elements[4],controller_object.matrix.elements[5],controller_object.matrix.elements[6],
-  controller_object.matrix.elements[8],controller_object.matrix.elements[9],controller_object.matrix.elements[10]])
+  },[controller_object.rotation.x,controller_object.rotation.y,controller_object.rotation.z])
 
   React.useEffect(() => {
     if(rendered){
