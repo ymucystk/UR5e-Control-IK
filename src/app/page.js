@@ -109,7 +109,7 @@ export default function Home() {
       ).multiply(
         new THREE.Matrix4().makeRotationY(toRadian(180))
       ).multiply(
-        new THREE.Matrix4().makeRotationX(toRadian(0))
+        new THREE.Matrix4().makeRotationX(toRadian(-38.12776))
       )
       const mtx = {
         m00:wk_mtx.elements[0], m01:wk_mtx.elements[4], m02:wk_mtx.elements[8],
