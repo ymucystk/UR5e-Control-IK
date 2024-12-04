@@ -1,5 +1,6 @@
 "use client";
 import * as React from 'react'
+import * as THREE from 'three';
 import Controller from './controller.js'
 
 export default function Home() {
@@ -7,8 +8,8 @@ export default function Home() {
   const [rendered,set_rendered] = React.useState(false)
   const robotNameList = ["Model"]
   const [robotName,set_robotName] = React.useState(robotNameList[0])
-  const [cursor_vis,set_cursor_vis] = React.useState(false)
-  const [box_vis,set_box_vis] = React.useState(false)
+  const cursor_vis = false
+  const box_vis = false
 
   const [j1_rotate,set_j1_rotate] = React.useState(0)
   const [j2_rotate,set_j2_rotate] = React.useState(0)
@@ -29,7 +30,7 @@ export default function Home() {
   const [p16_object,set_p16_object] = React.useState()
   const [p51_object,set_p51_object] = React.useState()
 
-  const [controller_object,set_controller_object] = React.useState({position:{x:0,y:0,z:0},rotation:{x:0,y:0,z:0,order:''}})
+  const [controller_object,set_controller_object] = React.useState({position:new THREE.Vector3(),rotation:new THREE.Euler()})
   const [trigger_on,set_trigger_on] = React.useState(false)
   const [start_pos,set_start_pos] = React.useState()
   const [save_target,set_save_target] = React.useState()
@@ -55,9 +56,10 @@ export default function Home() {
   const [toolName,set_toolName] = React.useState(toolNameList[0])
   let registered = false
 
-  const [x_vec_base,set_x_vec_base] = React.useState()
-  const [y_vec_base,set_y_vec_base] = React.useState()
-  const [z_vec_base,set_z_vec_base] = React.useState()
+  const x_vec_base = new THREE.Vector3(1,0,0).normalize()
+  const y_vec_base = new THREE.Vector3(0,1,0).normalize()
+  const z_vec_base = new THREE.Vector3(0,0,1).normalize()
+  const order = 'ZYX'
 
   const joint_pos = {
     base:{x:0,y:0,z:0},
@@ -72,7 +74,6 @@ export default function Home() {
 
   const [target,set_target] = React.useState({x:0.3,y:0.65,z:0.3})
   const [p15_16_len,set_p15_16_len] = React.useState(joint_pos.j7.z)
-  const [p14_maxlen,set_p14_maxlen] = React.useState(0)
  
   React.useEffect(function() {
     const intervalId = setInterval(function() {
@@ -97,32 +98,21 @@ export default function Home() {
 
   React.useEffect(() => {
     if(rendered && vr_mode && !trigger_on){
-      const obj_rotation = controller_object.rotation
-      const wk_mtx = new THREE.Matrix4().multiply(
-        new THREE.Matrix4().makeRotationZ(obj_rotation.z)
-      ).multiply(
-        new THREE.Matrix4().makeRotationY(obj_rotation.y)
-      ).multiply(
-        new THREE.Matrix4().makeRotationX(obj_rotation.x)
-      ).multiply(
-        new THREE.Matrix4().makeRotationZ(toRadian(180))
-      ).multiply(
-        new THREE.Matrix4().makeRotationY(toRadian(180))
-      ).multiply(
-        new THREE.Matrix4().makeRotationX(0.6654549523360951*-1)
+      const wk_mtx = new THREE.Matrix4().makeRotationFromEuler(controller_object.rotation)
+      .multiply(
+        new THREE.Matrix4().makeRotationFromEuler(
+          new THREE.Euler(
+            (0.6654549523360951*-1),  //x
+            toRadian(180),  //y
+            toRadian(180),  //z
+            controller_object.rotation.order
+          )
+        )
       )
-      const mtx = {
-        m00:wk_mtx.elements[0], m01:wk_mtx.elements[4], m02:wk_mtx.elements[8],
-        m10:wk_mtx.elements[1], m11:wk_mtx.elements[5], m12:wk_mtx.elements[9],
-        m20:wk_mtx.elements[2], m21:wk_mtx.elements[6], m22:wk_mtx.elements[10],
-      }
-      //回転順 ZYX
-      const theta_x = Math.atan2(mtx.m21,mtx.m22)
-      const theta_y = Math.asin(mtx.m20)*-1
-      const theta_z = Math.atan2(mtx.m10,mtx.m00)
-      set_wrist_rot_x(round(toAngle(theta_x)))
-      set_wrist_rot_y(round(toAngle(theta_y)))
-      set_wrist_rot_z(round(toAngle(theta_z)))
+      const wk_euler = new THREE.Euler().setFromRotationMatrix(wk_mtx,controller_object.rotation.order)
+      set_wrist_rot_x(round(toAngle(wk_euler.x)))
+      set_wrist_rot_y(round(toAngle(wk_euler.y)))
+      set_wrist_rot_z(round(toAngle(wk_euler.z)))
     }
   },[controller_object.rotation.x,controller_object.rotation.y,controller_object.rotation.z])
 
@@ -180,12 +170,8 @@ export default function Home() {
   }, [j6_rotate])
 
   const get_j5_quaternion = (rot_x=wrist_rot_x,rot_y=wrist_rot_y,rot_z=wrist_rot_z)=>{
-    return new THREE.Quaternion().multiply(
-      new THREE.Quaternion().setFromAxisAngle(z_vec_base,toRadian(rot_z))
-    ).multiply(
-      new THREE.Quaternion().setFromAxisAngle(y_vec_base,toRadian(rot_y))
-    ).multiply(
-      new THREE.Quaternion().setFromAxisAngle(x_vec_base,toRadian(rot_x))
+    return new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(toRadian(rot_x), toRadian(rot_y), toRadian(rot_z), order)
     )
   }
 
@@ -199,17 +185,17 @@ export default function Home() {
     if(rendered){
       target_update(false)
 
-      //p51_object.quaternion.copy(get_j5_quaternion())
+      if(p51_object)p51_object.quaternion.copy(get_j5_quaternion())
   
     }
   },[wrist_rot_x,wrist_rot_y,wrist_rot_z])
 
   const quaternionToRotation = (q,v)=>{
     const q_original = new THREE.Quaternion(q.x, q.y, q.z, q.w)
-    const q_conjugate = new THREE.Quaternion(q.x, q.y, q.z, q.w).conjugate()
+    const q_conjugate = q_original.clone().conjugate()
     const q_vector = new THREE.Quaternion(v.x, v.y, v.z, 0)
     const result = q_original.multiply(q_vector).multiply(q_conjugate)
-    return new THREE.Vector3(round(result.x),round(result.y),round(result.z))
+    return new THREE.Vector3(result.x,result.y,result.z)
   }
 
   const quaternionToAngle = (q)=>{
@@ -232,7 +218,7 @@ export default function Home() {
   const quaternionDifference = (q1,q2)=>{
     return new THREE.Quaternion(q1.x, q1.y, q1.z, q1.w).invert().multiply(
       new THREE.Quaternion(q2.x, q2.y, q2.z, q2.w)
-    )
+    ).normalize()
   }
 
   const pos_sub = (pos1, pos2)=>{
@@ -479,15 +465,6 @@ export default function Home() {
       if(!registered){
         registered = true
 
-        const teihen = joint_pos.j5.x
-        const takasa = joint_pos.j3.y + joint_pos.j4.y
-        const result = calc_side_2(teihen, takasa)
-        set_p14_maxlen(result.s)
-
-        set_x_vec_base(new THREE.Vector3(1,0,0).normalize())
-        set_y_vec_base(new THREE.Vector3(0,1,0).normalize())
-        set_z_vec_base(new THREE.Vector3(0,0,1).normalize())
-      
         AFRAME.registerComponent('robot-click', {
           init: function () {
             this.el.addEventListener('click', (evt)=>{
@@ -537,7 +514,7 @@ export default function Home() {
           schema: {type: 'string', default: ''},
           init: function () {
             set_controller_object(this.el.object3D)
-            this.el.object3D.rotation.order = "ZYX"
+            this.el.object3D.rotation.order = order
             this.el.addEventListener('triggerdown', (evt)=>{
               const wk_start_pos = new THREE.Vector4(0,0,0,1).applyMatrix4(this.el.object3D.matrix)
               set_start_pos(wk_start_pos)
