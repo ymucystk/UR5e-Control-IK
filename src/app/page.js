@@ -19,24 +19,24 @@ export default function Home() {
   const [j6_rotate,set_j6_rotate] = React.useState(0)
   const [j7_rotate,set_j7_rotate] = React.useState(0) //指用
 
-  const [j1_object,set_j1_object] = React.useState()
-  const [j2_object,set_j2_object] = React.useState()
-  const [j3_object,set_j3_object] = React.useState()
-  const [j4_object,set_j4_object] = React.useState()
-  const [j5_object,set_j5_object] = React.useState()
-  const [j6_object,set_j6_object] = React.useState()
+  const [j1_object,set_j1_object] = React.useState(new THREE.Object3D())
+  const [j2_object,set_j2_object] = React.useState(new THREE.Object3D())
+  const [j3_object,set_j3_object] = React.useState(new THREE.Object3D())
+  const [j4_object,set_j4_object] = React.useState(new THREE.Object3D())
+  const [j5_object,set_j5_object] = React.useState(new THREE.Object3D())
+  const [j6_object,set_j6_object] = React.useState(new THREE.Object3D())
 
-  const [p15_object,set_p15_object] = React.useState()
-  const [p16_object,set_p16_object] = React.useState()
-  const [p51_object,set_p51_object] = React.useState()
+  const [p15_object,set_p15_object] = React.useState(new THREE.Object3D())
+  const [p16_object,set_p16_object] = React.useState(new THREE.Object3D())
+  const [p51_object,set_p51_object] = React.useState(new THREE.Object3D())
 
-  const [controller_object,set_controller_object] = React.useState({position:new THREE.Vector3(),rotation:new THREE.Euler()})
+  const [controller_object,set_controller_object] = React.useState(new THREE.Object3D())
   const [trigger_on,set_trigger_on] = React.useState(false)
-  const [start_pos,set_start_pos] = React.useState()
+  const [start_pos,set_start_pos] = React.useState(new THREE.Vector4())
   const [save_target,set_save_target] = React.useState()
   const [vr_mode,set_vr_mode] = React.useState(false)
 
-  const [test_pos,set_test_pos] = React.useState({x:0,y:0,z:0})
+  const [test_pos,set_test_pos] = React.useState(new THREE.Vector3())
 
   const [c_pos_x,set_c_pos_x] = React.useState(0)
   const [c_pos_y,set_c_pos_y] = React.useState(0.4)
@@ -92,7 +92,7 @@ export default function Home() {
       }else{
         target_pos = pos_sub(save_target,move_pos)
       }
-      set_target({x:round(target_pos.x),y:round(target_pos.y),z:round(target_pos.z)})
+      set_target(getpos(target_pos))
     }
   },[controller_object.position.x,controller_object.position.y,controller_object.position.z])
 
@@ -134,39 +134,27 @@ export default function Home() {
   }
 
   React.useEffect(() => {
-    if (j1_object !== undefined) {
-      j1_object.quaternion.setFromAxisAngle(y_vec_base,toRadian(j1_rotate))
-    }
+    j1_object.quaternion.setFromAxisAngle(y_vec_base,toRadian(j1_rotate))
   }, [j1_rotate])
 
   React.useEffect(() => {
-    if (j2_object !== undefined) {
-      j2_object.quaternion.setFromAxisAngle(x_vec_base,toRadian(j2_rotate))
-    }
+    j2_object.quaternion.setFromAxisAngle(x_vec_base,toRadian(j2_rotate))
   }, [j2_rotate])
 
   React.useEffect(() => {
-    if (j3_object !== undefined) {
-      j3_object.quaternion.setFromAxisAngle(x_vec_base,toRadian(j3_rotate))
-    }
+    j3_object.quaternion.setFromAxisAngle(x_vec_base,toRadian(j3_rotate))
   }, [j3_rotate])
 
   React.useEffect(() => {
-    if (j4_object !== undefined) {
-      j4_object.quaternion.setFromAxisAngle(x_vec_base,toRadian(j4_rotate))
-    }
+    j4_object.quaternion.setFromAxisAngle(x_vec_base,toRadian(j4_rotate))
   }, [j4_rotate])
 
   React.useEffect(() => {
-    if (j5_object !== undefined) {
-      j5_object.quaternion.setFromAxisAngle(y_vec_base,toRadian(j5_rotate))
-    }
+    j5_object.quaternion.setFromAxisAngle(y_vec_base,toRadian(j5_rotate))
   }, [j5_rotate])
 
   React.useEffect(() => {
-    if (j6_object !== undefined) {
-      j6_object.quaternion.setFromAxisAngle(z_vec_base,toRadian(j6_rotate))
-    }
+    j6_object.quaternion.setFromAxisAngle(z_vec_base,toRadian(j6_rotate))
   }, [j6_rotate])
 
   const get_j5_quaternion = (rot_x=wrist_rot_x,rot_y=wrist_rot_y,rot_z=wrist_rot_z)=>{
@@ -184,17 +172,14 @@ export default function Home() {
   React.useEffect(() => {
     if(rendered){
       target_update(false)
-
-      if(p51_object)p51_object.quaternion.copy(get_j5_quaternion())
-  
+      p51_object.quaternion.copy(get_j5_quaternion())
     }
   },[wrist_rot_x,wrist_rot_y,wrist_rot_z])
 
   const quaternionToRotation = (q,v)=>{
-    const q_original = new THREE.Quaternion(q.x, q.y, q.z, q.w)
-    const q_conjugate = q_original.clone().conjugate()
+    const q_conjugate = q.clone().conjugate()
     const q_vector = new THREE.Quaternion(v.x, v.y, v.z, 0)
-    const result = q_original.multiply(q_vector).multiply(q_conjugate)
+    const result = q.clone().multiply(q_vector).multiply(q_conjugate)
     return new THREE.Vector3(result.x,result.y,result.z)
   }
 
@@ -216,9 +201,7 @@ export default function Home() {
   }
 
   const quaternionDifference = (q1,q2)=>{
-    return new THREE.Quaternion(q1.x, q1.y, q1.z, q1.w).invert().multiply(
-      new THREE.Quaternion(q2.x, q2.y, q2.z, q2.w)
-    ).normalize()
+    return q1.clone().invert().multiply(q2).normalize()
   }
 
   const pos_sub = (pos1, pos2)=>{
@@ -229,7 +212,7 @@ export default function Home() {
     if(rendered){
       target_update(true)
     }
-  },[target,tool_rotate])
+  },[target,tool_rotate,p15_16_len])
 
   const target_update = (target_move)=>{
     const p21_pos = get_p21_pos()
@@ -258,12 +241,12 @@ export default function Home() {
 
   const target15_update = (target15,wrist_direction,wrist_angle,target_move)=>{
     let dsp_message = ""
-    const distance_center_t15 = round(distance({x:0,y:0,z:0},{x:target15.x,y:0,z:target15.z}))
+    const distance_center_t15 = distance({x:0,y:0,z:0},{x:target15.x,y:0,z:target15.z})
     const {k:kakudo_t15} = calc_side_4(distance_center_t15,joint_pos.j5.x)
 
     const dir_sign_t15 = target15.x < 0 ? -1 : 1
     const xz_vector_t15 = new THREE.Vector3(target15.x,0,target15.z).normalize()
-    const direction_t15 = round(toAngle(z_vec_base.angleTo(xz_vector_t15)))*dir_sign_t15
+    const direction_t15 = toAngle(z_vec_base.angleTo(xz_vector_t15))*dir_sign_t15
     if(isNaN(direction_t15)){
       console.log("target15 指定可能範囲外！")
       set_dsp_message("target15 指定可能範囲外！")
@@ -280,14 +263,14 @@ export default function Home() {
       new THREE.Quaternion().setFromAxisAngle(y_vec_base,toRadian(wk_j1_rotate))
     )
     const direction_offset = normalize180(wrist_direction - wk_j1_rotate)
-    const distance_target_t15 = round(distance({x:target.x,y:0,z:target.z},{x:target15.x,y:0,z:target15.z}))
+    const distance_target_t15 = distance({x:target.x,y:0,z:target.z},{x:target15.x,y:0,z:target15.z})
     const elevation_target_t15 =  target15.y - target.y
     const {a:j1_extension} = calc_side_1(distance_target_t15,direction_offset)
-    const {k:kakudo} = calc_side_2(j1_extension, elevation_target_t15)
-    const wk_j4_rotate_sabun = normalize180(90 - kakudo)
+    const j4_radian = Math.atan2(elevation_target_t15, j1_extension)
+    const wk_j4_rotate_sabun = normalize180(toAngle(j4_radian))
 
     p14q.multiply(
-      new THREE.Quaternion().setFromAxisAngle(x_vec_base,toRadian(wk_j4_rotate_sabun))
+      new THREE.Quaternion().setFromAxisAngle(x_vec_base,j4_radian)
     )
     const p14_extension_pos = quaternionToRotation(p14q,{x:0,y:0,z:p15_16_len})
     const wk_j5_kakudo = round(toAngle(p14_extension_pos.angleTo(get_p21_pos())))
@@ -310,12 +293,9 @@ export default function Home() {
 
     const p14_offset_pos = quaternionToRotation(p14q,{x:0,y:joint_pos.j5.y,z:0})
 
-    const target14 = {...target15}
-    target14.x -= p14_offset_pos.x
-    target14.y -= p14_offset_pos.y
-    target14.z -= p14_offset_pos.z
+    const target14 = pos_sub(target15,p14_offset_pos)
 
-    const syahen_t14 = round(distance({x:0,y:0,z:0},{x:target14.x,y:0,z:target14.z}))
+    const syahen_t14 = distance({x:0,y:0,z:0},{x:target14.x,y:0,z:target14.z})
     if(syahen_t14 < joint_pos.j5.x){
       console.log("p14 指定可能範囲外！")
       set_dsp_message("p14 指定可能範囲外！")
@@ -323,7 +303,7 @@ export default function Home() {
     }
     set_j1_rotate(wk_j1_rotate)
 
-    const takasa_t14 = round(target14.y - joint_pos.j2.y)
+    const takasa_t14 = target14.y - joint_pos.j2.y
     const {t:teihen_t14} = calc_side_4(syahen_t14,joint_pos.j5.x)
     const {s:side_c,k:angle_base} = calc_side_2(teihen_t14,takasa_t14)
     if(isNaN(angle_base)){
@@ -446,12 +426,8 @@ export default function Home() {
 
   React.useEffect(() => {
     if(rendered){
-      const box15_result = getposq(p15_object)
-      const p15_pos = getpos(box15_result.position)
-
-      const box16_result = getposq(p16_object)
-      const p16_pos = getpos(box16_result.position)
-
+      const p15_pos = new THREE.Vector4().applyMatrix4(p15_object.matrix)
+      const p16_pos = new THREE.Vector4().applyMatrix4(p16_object.matrix)
       set_p15_16_len(distance(p15_pos,p16_pos))
     }
   },[now])
