@@ -551,8 +551,11 @@ export default function Home() {
           <Cursor3dp j_id="21" pos={{x:0,y:0,z:p15_16_len}} visible={cursor_vis}></Cursor3dp>
           <Cursor3dp j_id="22" pos={{x:0,y:-joint_pos.j5.y,z:0}} rot={{x:0,y:j1_rotate,z:0}} visible={cursor_vis}></Cursor3dp>
         </Cursor3dp>
-        <a-entity light="type: directional; color: #EEE; intensity: 0.7" position="1 1 1"></a-entity>
-        <a-entity light="type: directional; color: #EEE; intensity: 0.7" position="-1 1 1"></a-entity>
+        <a-entity light="type: directional; color: #FFF; intensity: 0.35" position="1 1 1"></a-entity>
+        <a-entity light="type: directional; color: #FFF; intensity: 0.35" position="-1 1 1"></a-entity>
+        <a-entity light="type: directional; color: #FFF; intensity: 0.35" position="-1 1 -1"></a-entity>
+        <a-entity light="type: directional; color: #EEE; intensity: 0.35" position="1 1 -1"></a-entity>
+        <a-entity light="type: directional; color: #EEE; intensity: 0.2" position="0 -1 0"></a-entity>
         <a-entity id="rig" position={`${c_pos_x} ${c_pos_y} ${c_pos_z}`} rotation={`${c_deg_x} ${c_deg_y} ${c_deg_z}`}>
           <a-camera id="camera" wasd-controls-enabled={false} look-controls-enabled={false} position="0 0 0"></a-camera>
         </a-entity>
