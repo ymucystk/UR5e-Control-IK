@@ -4,6 +4,26 @@ import * as React from 'react'
 import * as THREE from 'three';
 import Controller from './controller.js'
 
+const joint_pos = {
+  base:{x:0,y:0,z:0},
+  j1:{x:0,y:0,z:0},
+  j2:{x:0,y:0.1626,z:0},
+  j3:{x:0,y:0.4251,z:0},
+  j4:{x:0,y:0.3922,z:0},
+  j5:{x:0.1325,y:0.1008,z:0},
+  j6:{x:0,y:0,z:0},
+  j7:{x:0,y:0,z:0.12},
+}
+
+let registered = false
+let trigger_on = false
+const order = 'ZYX'
+
+let start_rotation = new THREE.Euler(0.6654549523360951,0,0,order)
+let save_rotation = new THREE.Euler(0.6654549523360951,0,0,order)
+let current_rotation = new THREE.Euler(0.6654549523360951,0,0,order)
+
+
 export default function Home() {
   const [now, setNow] = React.useState(new Date())
   const [rendered,set_rendered] = React.useState(false)
@@ -32,21 +52,21 @@ export default function Home() {
   const [p51_object,set_p51_object] = React.useState(new THREE.Object3D())
 
   const [controller_object,set_controller_object] = React.useState(new THREE.Object3D())
-  const [trigger_on,set_trigger_on] = React.useState(false)
   const [start_pos,set_start_pos] = React.useState(new THREE.Vector4())
   const [save_target,set_save_target] = React.useState()
-  const [vr_mode,set_vr_mode] = React.useState(false)
+
+  const vrModeRef = React.useRef(false); // vr_mode はref のほうが使いやすい
 
   const [test_pos,set_test_pos] = React.useState(new THREE.Vector3())
 
   const [c_pos_x,set_c_pos_x] = React.useState(0)
   const [c_pos_y,set_c_pos_y] = React.useState(0.4)
-  const [c_pos_z,set_c_pos_z] = React.useState(1.0)
+  const [c_pos_z,set_c_pos_z] = React.useState(-1.0)
   const [c_deg_x,set_c_deg_x] = React.useState(0)
-  const [c_deg_y,set_c_deg_y] = React.useState(0)
+  const [c_deg_y,set_c_deg_y] = React.useState(180)
   const [c_deg_z,set_c_deg_z] = React.useState(0)
 
-  const [wrist_rot_x,set_wrist_rot_x] = React.useState(0)
+  const [wrist_rot_x,set_wrist_rot_x] = React.useState(180)
   const [wrist_rot_y,set_wrist_rot_y] = React.useState(0)
   const [wrist_rot_z,set_wrist_rot_z] = React.useState(0)
   const [tool_rotate,set_tool_rotate] = React.useState(0)
@@ -55,25 +75,12 @@ export default function Home() {
 
   const toolNameList = ["No tool","Gripper","E-Pick"]
   const [toolName,set_toolName] = React.useState(toolNameList[0])
-  let registered = false
 
   const x_vec_base = new THREE.Vector3(1,0,0).normalize()
   const y_vec_base = new THREE.Vector3(0,1,0).normalize()
   const z_vec_base = new THREE.Vector3(0,0,1).normalize()
-  const order = 'ZYX'
 
-  const joint_pos = {
-    base:{x:0,y:0,z:0},
-    j1:{x:0,y:0,z:0},
-    j2:{x:0,y:0.1626,z:0},
-    j3:{x:0,y:0.4251,z:0},
-    j4:{x:0,y:0.3922,z:0},
-    j5:{x:0.1325,y:0.1008,z:0},
-    j6:{x:0,y:0,z:0},
-    j7:{x:0,y:0,z:0.12},
-  }
-
-  const [target,set_target] = React.useState({x:0.3,y:0.65,z:0.3})
+  const [target,set_target] = React.useState({x:0.3,y:0.65,z:-0.3})
   const [p15_16_len,set_p15_16_len] = React.useState(joint_pos.j7.z)
  
   React.useEffect(function() {
@@ -84,33 +91,49 @@ export default function Home() {
   }, [now]);
 
   React.useEffect(() => {
-    if(rendered && vr_mode && trigger_on){
+    if(rendered && vrModeRef.current && trigger_on){
       const move_pos = pos_sub(start_pos,controller_object.position)
+      move_pos.x = move_pos.x/5
+      move_pos.y = move_pos.y/5
+      move_pos.z = move_pos.z/5
       let target_pos
       if(save_target === undefined){
-        set_save_target(target)
+        set_save_target({...target})
         target_pos = pos_sub(target,move_pos)
       }else{
         target_pos = pos_sub(save_target,move_pos)
       }
-      set_target(getpos(target_pos))
+      if(target_pos.y < 0.012){
+        target_pos.y = 0.012
+      }
+      set_target((target_pos))
     }
   },[controller_object.position.x,controller_object.position.y,controller_object.position.z])
 
   React.useEffect(() => {
-    if(rendered && vr_mode && !trigger_on){
-      const wk_mtx = new THREE.Matrix4().makeRotationFromEuler(controller_object.rotation)
-      .multiply(
-        new THREE.Matrix4().makeRotationFromEuler(
+    if(rendered && vrModeRef.current && trigger_on){
+      const quat_start = new THREE.Quaternion().setFromEuler(start_rotation);
+      const quat_controller = new THREE.Quaternion().setFromEuler(controller_object.rotation);
+      const quatDifference1 = quat_start.clone().invert().multiply(quat_controller);
+
+      const quat_save = new THREE.Quaternion().setFromEuler(save_rotation);
+      const quatDifference2 = quat_start.clone().invert().multiply(quat_save);
+
+      const wk_mtx = quat_start.clone().multiply(quatDifference1).multiply(quatDifference2)
+      current_rotation = new THREE.Euler().setFromQuaternion(wk_mtx,controller_object.rotation.order)
+
+      wk_mtx.multiply(
+        new THREE.Quaternion().setFromEuler(
           new THREE.Euler(
             (0.6654549523360951*-1),  //x
-            toRadian(180),  //y
-            toRadian(180),  //z
+            Math.PI,  //y
+            Math.PI,  //z
             controller_object.rotation.order
           )
         )
       )
-      const wk_euler = new THREE.Euler().setFromRotationMatrix(wk_mtx,controller_object.rotation.order)
+
+      const wk_euler = new THREE.Euler().setFromQuaternion(wk_mtx,controller_object.rotation.order)
       set_wrist_rot_x(round(toAngle(wk_euler.x)))
       set_wrist_rot_y(round(toAngle(wk_euler.y)))
       set_wrist_rot_z(round(toAngle(wk_euler.z)))
@@ -493,26 +516,28 @@ export default function Home() {
             set_controller_object(this.el.object3D)
             this.el.object3D.rotation.order = order
             this.el.addEventListener('triggerdown', (evt)=>{
+              start_rotation = this.el.object3D.rotation.clone()
               const wk_start_pos = new THREE.Vector4(0,0,0,1).applyMatrix4(this.el.object3D.matrix)
               set_start_pos(wk_start_pos)
-              set_trigger_on(true)
+              trigger_on = true
             });
             this.el.addEventListener('triggerup', (evt)=>{
+              save_rotation = current_rotation.clone()
               set_save_target(undefined)
-              set_trigger_on(false)
+              trigger_on = false
             });
           }
         });
         AFRAME.registerComponent('scene', {
           schema: {type: 'string', default: ''},
           init: function () {
+            //this.el.enterVR();
             this.el.addEventListener('enter-vr', ()=>{
-              set_vr_mode(true)
+              vrModeRef.current = true;
               console.log('enter-vr')
-              set_target({x:target.x,y:target.y,z:target.z*-1})
             });
             this.el.addEventListener('exit-vr', ()=>{
-              set_vr_mode(false)
+              vrModeRef.current = false;
               console.log('exit-vr')
             });
           }
