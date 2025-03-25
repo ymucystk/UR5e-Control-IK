@@ -22,8 +22,8 @@ const order = 'ZYX'
 let start_rotation = new THREE.Euler(0.6654549523360951,0,0,order)
 let save_rotation = new THREE.Euler(0.6654549523360951,0,0,order)
 let current_rotation = new THREE.Euler(0.6654549523360951,0,0,order)
-const joint_move_speed_ms = 20
-const max_move_unit = (0.1/120)
+const joint_move_speed_ms = 10
+const max_move_unit = (0.1/100)
 const j1_rotate_table = []
 const j2_rotate_table = []
 const j3_rotate_table = []
@@ -65,7 +65,7 @@ export default function Home() {
   const [p51_object,set_p51_object] = React.useState(new THREE.Object3D())
 
   const [controller_object,set_controller_object] = React.useState(new THREE.Object3D())
-  const [start_pos,set_start_pos] = React.useState(new THREE.Vector4())
+  const [start_pos,set_start_pos] = React.useState(new THREE.Vector3())
   const [save_target,set_save_target] = React.useState()
 
   const vrModeRef = React.useRef(false); // vr_mode はref のほうが使いやすい
@@ -604,7 +604,7 @@ export default function Home() {
       ).multiply(
         new THREE.Matrix4().makeRotationZ(toRadian(wk_j6_rotate_value)).setPosition(joint_pos.j6.x,joint_pos.j6.y,joint_pos.j6.z)
       ).multiply(
-        new THREE.Matrix4().setPosition(joint_pos.j7.x,joint_pos.j7.y,joint_pos.j7.z)
+        new THREE.Matrix4().setPosition(joint_pos.j7.x,joint_pos.j7.y,p15_16_len)
       )
       const result_target = new THREE.Vector3().applyMatrix4(base_m4)
       const sabun_pos = pos_sub(target,result_target)
@@ -693,8 +693,8 @@ export default function Home() {
 
   React.useEffect(() => {
     if(rendered){
-      const p15_pos = new THREE.Vector4().applyMatrix4(p15_object.matrix)
-      const p16_pos = new THREE.Vector4().applyMatrix4(p16_object.matrix)
+      const p15_pos = new THREE.Vector3().applyMatrix4(p15_object.matrix)
+      const p16_pos = new THREE.Vector3().applyMatrix4(p16_object.matrix)
       set_p15_16_len(distance(p15_pos,p16_pos))
     }
   },[now])
@@ -760,7 +760,7 @@ export default function Home() {
             this.el.object3D.rotation.order = order
             this.el.addEventListener('triggerdown', (evt)=>{
               start_rotation = this.el.object3D.rotation.clone()
-              const wk_start_pos = new THREE.Vector4(0,0,0,1).applyMatrix4(this.el.object3D.matrix)
+              const wk_start_pos = new THREE.Vector3().applyMatrix4(this.el.object3D.matrix)
               set_start_pos(wk_start_pos)
               trigger_on = true
             });
