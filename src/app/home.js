@@ -338,7 +338,7 @@ export default function Home() {
 
   React.useEffect(() => {
     if (j1_object !== undefined) {
-      target_move_distance = 0.1
+      target_move_distance = 0
       const rotate_value = round(normalize180(input_rotate[0]))
       set_j1_rotate(rotate_value)
     }
@@ -346,7 +346,7 @@ export default function Home() {
 
   React.useEffect(() => {
     if (j2_object !== undefined) {
-      target_move_distance = 0.1
+      target_move_distance = 0
       const rotate_value = round(normalize180(input_rotate[1]))
       set_j2_rotate(rotate_value)
     }
@@ -354,7 +354,7 @@ export default function Home() {
 
   React.useEffect(() => {
     if (j4_object !== undefined) {
-      target_move_distance = 0.1
+      target_move_distance = 0
       const rotate_value = round(normalize180(input_rotate[2]))
       set_j3_rotate(rotate_value)
     }
@@ -362,7 +362,7 @@ export default function Home() {
 
   React.useEffect(() => {
     if (j4_object !== undefined) {
-      target_move_distance = 0.1
+      target_move_distance = 0
       const rotate_value = round(normalize180(input_rotate[3]))
       set_j4_rotate(rotate_value)
     }
@@ -370,7 +370,7 @@ export default function Home() {
 
   React.useEffect(() => {
     if (j5_object !== undefined) {
-      target_move_distance = 0.1
+      target_move_distance = 0
       const rotate_value = round(normalize180(input_rotate[4]-90))
       set_j5_rotate(rotate_value)
     }
@@ -378,7 +378,7 @@ export default function Home() {
 
   React.useEffect(() => {
     if (j6_object !== undefined) {
-      target_move_distance = 0.1
+      target_move_distance = 0
       const rotate_value = round(normalize180(input_rotate[5]))
       set_j6_rotate(rotate_value)
     }
@@ -418,16 +418,16 @@ export default function Home() {
   }
 
   const quaternionToAngle = (q)=>{
-    const wk_angle = 2 * Math.acos(q.w)
+    const wk_angle = 2 * Math.acos(round(q.w))
     if(wk_angle === 0){
-      return {angle:round(toAngle(wk_angle)),axis:new THREE.Vector3(0,0,0)}
+      return {angle:(toAngle(wk_angle)),axis:new THREE.Vector3(0,0,0)}
     }
-    const angle = round(toAngle(wk_angle))
+    const angle = (toAngle(wk_angle))
     const sinHalfAngle = Math.sqrt(1 - q.w * q.w)
     if (sinHalfAngle > 0) {
-      const axisX = round(q.x / sinHalfAngle)
-      const axisY = round(q.y / sinHalfAngle)
-      const axisZ = round(q.z / sinHalfAngle)
+      const axisX = (q.x / sinHalfAngle)
+      const axisY = (q.y / sinHalfAngle)
+      const axisZ = (q.z / sinHalfAngle)
       return {angle,axis:new THREE.Vector3(axisX,axisY,axisZ)}
     }else{
       return {angle,axis:new THREE.Vector3(0,0,0)}
@@ -639,6 +639,9 @@ export default function Home() {
       return angle
     }
     const amari = angle % 180
+    if(amari === 0){
+      return amari
+    }else
     if(amari < 0){
       return (180 + amari)
     }else{
