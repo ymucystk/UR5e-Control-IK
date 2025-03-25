@@ -22,7 +22,16 @@ const order = 'ZYX'
 let start_rotation = new THREE.Euler(0.6654549523360951,0,0,order)
 let save_rotation = new THREE.Euler(0.6654549523360951,0,0,order)
 let current_rotation = new THREE.Euler(0.6654549523360951,0,0,order)
-
+const joint_move_speed_ms = 20
+const max_move_unit = (0.1/120)
+const j1_rotate_table = []
+const j2_rotate_table = []
+const j3_rotate_table = []
+const j4_rotate_table = []
+const j5_rotate_table = []
+const j6_rotate_table = []
+let target_move_distance = 0.2
+let real_target = {x:0.3,y:0.65,z:-0.3}
 
 export default function Home() {
   const [now, setNow] = React.useState(new Date())
@@ -31,6 +40,7 @@ export default function Home() {
   const [robotName,set_robotName] = React.useState(robotNameList[0])
   const cursor_vis = false
   const box_vis = false
+  const [target_error,set_target_error] = React.useState(false)
 
   const [j1_rotate,set_j1_rotate] = React.useState(0)
   const [j2_rotate,set_j2_rotate] = React.useState(0)
@@ -39,6 +49,9 @@ export default function Home() {
   const [j5_rotate,set_j5_rotate] = React.useState(0)
   const [j6_rotate,set_j6_rotate] = React.useState(0)
   const [j7_rotate,set_j7_rotate] = React.useState(0) //指用
+
+  const [rotate, set_rotate] = React.useState([0,0,0,0,0,0,0])  //出力用
+  const [input_rotate, set_input_rotate] = React.useState([0,0,0,0,0,0,0])  //入力用
 
   const [j1_object,set_j1_object] = React.useState(new THREE.Object3D())
   const [j2_object,set_j2_object] = React.useState(new THREE.Object3D())
@@ -66,9 +79,9 @@ export default function Home() {
   const [c_deg_y,set_c_deg_y] = React.useState(180)
   const [c_deg_z,set_c_deg_z] = React.useState(0)
 
-  const [wrist_rot_x,set_wrist_rot_x] = React.useState(180)
-  const [wrist_rot_y,set_wrist_rot_y] = React.useState(0)
-  const [wrist_rot_z,set_wrist_rot_z] = React.useState(0)
+  const [wrist_rot_x,set_wrist_rot_x_org] = React.useState(180)
+  const [wrist_rot_y,set_wrist_rot_y_org] = React.useState(0)
+  const [wrist_rot_z,set_wrist_rot_z_org] = React.useState(0)
   const [tool_rotate,set_tool_rotate] = React.useState(0)
   const [wrist_degree,set_wrist_degree] = React.useState({direction:0,angle:0})
   const [dsp_message,set_dsp_message] = React.useState("")
@@ -80,7 +93,7 @@ export default function Home() {
   const y_vec_base = new THREE.Vector3(0,1,0).normalize()
   const z_vec_base = new THREE.Vector3(0,0,1).normalize()
 
-  const [target,set_target] = React.useState({x:0.3,y:0.65,z:-0.3})
+  const [target,set_target_org] = React.useState(real_target)
   const [p15_16_len,set_p15_16_len] = React.useState(joint_pos.j7.z)
  
   React.useEffect(function() {
@@ -89,6 +102,32 @@ export default function Home() {
     }, 10);
     return function(){clearInterval(intervalId)};
   }, [now]);
+
+  const set_target = (new_pos)=>{
+    set_target_org((prev_pos)=>{
+      target_move_distance = distance(real_target,new_pos)
+      return new_pos
+    })
+  }
+
+  const set_wrist_rot_x = (new_rot)=>{
+    set_wrist_rot_x_org((prev_rot)=>{
+      target_move_distance = 0.0001
+      return new_rot
+    })
+  }
+  const set_wrist_rot_y = (new_rot)=>{
+    set_wrist_rot_y_org((prev_rot)=>{
+      target_move_distance = 0.0001
+      return new_rot
+    })
+  }
+  const set_wrist_rot_z = (new_rot)=>{
+    set_wrist_rot_z_org((prev_rot)=>{
+      target_move_distance = 0.0001
+      return new_rot
+    })
+  }
 
   React.useEffect(() => {
     if(rendered && vrModeRef.current && trigger_on){
@@ -157,29 +196,200 @@ export default function Home() {
     set_robotName(get)
   }
 
+  const getDivision = (start_quaternion,end_quaternion)=>{
+    const move_unit_1 = ((target_move_distance*1000)/joint_move_speed_ms)
+    const division_1 = Math.ceil(move_unit_1)+1
+
+    const deff_quaternion = start_quaternion.clone().invert().multiply(end_quaternion)
+    const wk_euler = new THREE.Quaternion().angleTo(deff_quaternion)
+    const move_unit_2 = ((toAngle(wk_euler)*max_move_unit)*1000)/joint_move_speed_ms
+    const division_2 = Math.ceil(move_unit_2)+1
+
+    return Math.max(division_1,division_2)
+  }
+
+  const j_move_sub = (j_object,j_rotate_table,vec_base,idx,start_quaternion,end_quaternion,division,count=1)=>{
+    j_object.quaternion.slerpQuaternions(start_quaternion,end_quaternion,(count/division))
+    const wk_euler = new THREE.Quaternion().angleTo(j_object.quaternion)
+    set_rotate((org)=>{
+      org[idx] = round(toAngle(wk_euler),3)
+      return org
+    })
+    if(count < division){
+      setTimeout(()=>{
+        j_move_sub(j_object,j_rotate_table,vec_base,idx,start_quaternion,end_quaternion,division,count+1)
+      },joint_move_speed_ms)
+    }else{
+      setTimeout(()=>{
+        j_rotate_table.shift()
+        j_move(j_object,j_rotate_table,vec_base,idx)
+      },0)
+    }
+  }
+
+  const j_move = (j_object,j_rotate_table,vec_base,idx)=>{
+    if(j_rotate_table.length > 0){
+      const wk_j_rotate = j_rotate_table[0]
+      const start_quaternion = j_object.quaternion.clone()
+      const end_quaternion = new THREE.Quaternion().setFromAxisAngle(vec_base,toRadian(wk_j_rotate))
+      const division = getDivision(start_quaternion,end_quaternion)
+      if(division === 0){
+        setTimeout(()=>{
+          j_rotate_table.shift()
+          j_move(j_object,j_rotate_table,vec_base,idx)
+        },0)
+      }else{
+        setTimeout(()=>{
+          j_move_sub(j_object,j_rotate_table,vec_base,idx,start_quaternion,end_quaternion,division)
+        },joint_move_speed_ms)
+      }
+    }
+  }
+
   React.useEffect(() => {
-    j1_object.quaternion.setFromAxisAngle(y_vec_base,toRadian(j1_rotate))
+    if (j1_object !== undefined) {
+      const wk_switch = j1_rotate_table.length === 0
+      if(j1_rotate_table.length > 1){
+        j1_rotate_table.pop()
+      }
+      j1_rotate_table.push(j1_rotate)
+      if(wk_switch){
+        setTimeout(()=>{
+          j_move(j1_object,j1_rotate_table,y_vec_base,0)
+        },0)
+      }
+    }
   }, [j1_rotate])
 
   React.useEffect(() => {
-    j2_object.quaternion.setFromAxisAngle(x_vec_base,toRadian(j2_rotate))
+    if (j2_object !== undefined) {
+      const wk_switch = j2_rotate_table.length === 0
+      if(j2_rotate_table.length > 1){
+        j2_rotate_table.pop()
+      }
+      j2_rotate_table.push(j2_rotate)
+      if(wk_switch){
+        setTimeout(()=>{
+          j_move(j2_object,j2_rotate_table,x_vec_base,1)
+        },0)
+      }
+    }
   }, [j2_rotate])
 
   React.useEffect(() => {
-    j3_object.quaternion.setFromAxisAngle(x_vec_base,toRadian(j3_rotate))
+    if (j3_object !== undefined) {
+      const wk_switch = j3_rotate_table.length === 0
+      if(j3_rotate_table.length > 1){
+        j3_rotate_table.pop()
+      }
+      j3_rotate_table.push(j3_rotate)
+      if(wk_switch){
+        setTimeout(()=>{
+          j_move(j3_object,j3_rotate_table,x_vec_base,2)
+        },0)
+      }
+    }
   }, [j3_rotate])
 
   React.useEffect(() => {
-    j4_object.quaternion.setFromAxisAngle(x_vec_base,toRadian(j4_rotate))
+    if (j4_object !== undefined) {
+      const wk_switch = j4_rotate_table.length === 0
+      if(j4_rotate_table.length > 1){
+        j4_rotate_table.pop()
+      }
+      j4_rotate_table.push(j4_rotate)
+      if(wk_switch){
+        setTimeout(()=>{
+          j_move(j4_object,j4_rotate_table,x_vec_base,3)
+        },0)
+      }
+    }
   }, [j4_rotate])
 
   React.useEffect(() => {
-    j5_object.quaternion.setFromAxisAngle(y_vec_base,toRadian(j5_rotate))
+    if (j5_object !== undefined) {
+      const wk_switch = j5_rotate_table.length === 0
+      if(j5_rotate_table.length > 1){
+        j5_rotate_table.pop()
+      }
+      j5_rotate_table.push(j5_rotate)
+      if(wk_switch){
+        setTimeout(()=>{
+          j_move(j5_object,j5_rotate_table,y_vec_base,4)
+        },0)
+      }
+    }
   }, [j5_rotate])
 
   React.useEffect(() => {
-    j6_object.quaternion.setFromAxisAngle(z_vec_base,toRadian(j6_rotate))
+    if (j6_object !== undefined) {
+      const wk_switch = j6_rotate_table.length === 0
+      if(j6_rotate_table.length > 1){
+        j6_rotate_table.pop()
+      }
+      j6_rotate_table.push(j6_rotate)
+      if(wk_switch){
+        setTimeout(()=>{
+          j_move(j6_object,j6_rotate_table,z_vec_base,5)
+        },0)
+      }
+    }
   }, [j6_rotate])
+
+  React.useEffect(() => {
+    if (j1_object !== undefined) {
+      target_move_distance = 0.1
+      const rotate_value = round(normalize180(input_rotate[0]))
+      set_j1_rotate(rotate_value)
+    }
+  }, [input_rotate[0]])
+
+  React.useEffect(() => {
+    if (j2_object !== undefined) {
+      target_move_distance = 0.1
+      const rotate_value = round(normalize180(input_rotate[1]))
+      set_j2_rotate(rotate_value)
+    }
+  }, [input_rotate[1]])
+
+  React.useEffect(() => {
+    if (j4_object !== undefined) {
+      target_move_distance = 0.1
+      const rotate_value = round(normalize180(input_rotate[2]))
+      set_j3_rotate(rotate_value)
+    }
+  }, [input_rotate[2]])
+
+  React.useEffect(() => {
+    if (j4_object !== undefined) {
+      target_move_distance = 0.1
+      const rotate_value = round(normalize180(input_rotate[3]))
+      set_j4_rotate(rotate_value)
+    }
+  }, [input_rotate[3]])
+
+  React.useEffect(() => {
+    if (j5_object !== undefined) {
+      target_move_distance = 0.1
+      const rotate_value = round(normalize180(input_rotate[4]-90))
+      set_j5_rotate(rotate_value)
+    }
+  }, [input_rotate[4]])
+
+  React.useEffect(() => {
+    if (j6_object !== undefined) {
+      target_move_distance = 0.1
+      const rotate_value = round(normalize180(input_rotate[5]))
+      set_j6_rotate(rotate_value)
+    }
+  }, [input_rotate[5]])
+
+  React.useEffect(() => {
+    if(rendered){
+      const rotate_value = input_rotate[6]
+      set_j7_rotate(rotate_value)
+    }
+  }, [input_rotate[6]])
 
   const get_j5_quaternion = (rot_x=wrist_rot_x,rot_y=wrist_rot_y,rot_z=wrist_rot_z)=>{
     return new THREE.Quaternion().setFromEuler(
@@ -274,6 +484,7 @@ export default function Home() {
     if(isNaN(direction_t15)){
       console.log("target15 指定可能範囲外！")
       set_dsp_message("target15 指定可能範囲外！")
+      set_target_error(true)
       return
     }
     let wk_j1_rotate = normalize180(round(direction_t15 - (90 - kakudo_t15)))
@@ -304,8 +515,6 @@ export default function Home() {
       console.log("wk_j5_rotate 指定可能範囲外！")
       dsp_message = "wk_j5_rotate 指定可能範囲外！"
       wk_j5_rotate = j5_rotate
-    }else{
-      set_j5_rotate(wk_j5_rotate)
     }
     p14q.multiply(
       new THREE.Quaternion().setFromAxisAngle(y_vec_base,toRadian(wk_j5_rotate))
@@ -313,7 +522,6 @@ export default function Home() {
     const j5q = get_j5_quaternion()
     const p14_j5_diff = quaternionToAngle(quaternionDifference(p14q,j5q))
     const wk_j6_rotate = p14_j5_diff.angle * ((p14_j5_diff.axis.z < 0)?-1:1)
-    set_j6_rotate(normalize180(round(wk_j6_rotate + tool_rotate)))
 
     const p14_offset_pos = quaternionToRotation(p14q,{x:0,y:joint_pos.j5.y,z:0})
 
@@ -323,9 +531,9 @@ export default function Home() {
     if(syahen_t14 < joint_pos.j5.x){
       console.log("p14 指定可能範囲外！")
       set_dsp_message("p14 指定可能範囲外！")
+      set_target_error(true)
       return
     }
-    set_j1_rotate(wk_j1_rotate)
 
     const takasa_t14 = target14.y - joint_pos.j2.y
     const {t:teihen_t14} = calc_side_4(syahen_t14,joint_pos.j5.x)
@@ -333,6 +541,7 @@ export default function Home() {
     if(isNaN(angle_base)){
       console.log("angle_base 指定可能範囲外！")
       set_dsp_message("angle_base 指定可能範囲外！")
+      set_target_error(true)
       return
     }
 
@@ -374,14 +583,48 @@ export default function Home() {
         wk_j3_rotate = angle_j3
       }
     }
-    set_j2_rotate(wk_j2_rotate)
-    set_j3_rotate(wk_j3_rotate)
     let wk_j4_rotate = normalize180(round(((wk_j2_rotate + wk_j3_rotate) * -1) + wk_j4_rotate_sabun))
     if(isNaN(wk_j4_rotate)){
       console.log("wk_j4_rotate 指定可能範囲外！")
       dsp_message = "wk_j4_rotate 指定可能範囲外！"
+    }
+    if(dsp_message  === ""){
+      const wk_j6_rotate_value = normalize180(round(wk_j6_rotate + tool_rotate))
+
+      const base_m4 = new THREE.Matrix4().multiply(
+        new THREE.Matrix4().makeRotationY(toRadian(wk_j1_rotate)).setPosition(joint_pos.j1.x,joint_pos.j1.y,joint_pos.j1.z)
+      ).multiply(
+        new THREE.Matrix4().makeRotationX(toRadian(wk_j2_rotate)).setPosition(joint_pos.j2.x,joint_pos.j2.y,joint_pos.j2.z)
+      ).multiply(
+        new THREE.Matrix4().makeRotationX(toRadian(wk_j3_rotate)).setPosition(joint_pos.j3.x,joint_pos.j3.y,joint_pos.j3.z)
+      ).multiply(
+        new THREE.Matrix4().makeRotationX(toRadian(wk_j4_rotate)).setPosition(joint_pos.j4.x,joint_pos.j4.y,joint_pos.j4.z)
+      ).multiply(
+        new THREE.Matrix4().makeRotationY(toRadian(wk_j5_rotate)).setPosition(joint_pos.j5.x,joint_pos.j5.y,joint_pos.j5.z)
+      ).multiply(
+        new THREE.Matrix4().makeRotationZ(toRadian(wk_j6_rotate_value)).setPosition(joint_pos.j6.x,joint_pos.j6.y,joint_pos.j6.z)
+      ).multiply(
+        new THREE.Matrix4().setPosition(joint_pos.j7.x,joint_pos.j7.y,joint_pos.j7.z)
+      )
+      const result_target = new THREE.Vector3().applyMatrix4(base_m4)
+      const sabun_pos = pos_sub(target,result_target)
+      const sabun_distance = sabun_pos.x**2+sabun_pos.y**2+sabun_pos.z**2
+      if(round(sabun_distance) <= 0){
+        set_target_error(false)
+        set_j1_rotate(wk_j1_rotate)
+        set_j2_rotate(wk_j2_rotate)
+        set_j3_rotate(wk_j3_rotate)
+        set_j4_rotate(wk_j4_rotate)
+        set_j5_rotate(wk_j5_rotate)
+        set_j6_rotate(wk_j6_rotate_value)
+        real_target = {...result_target}
+      }else{
+        console.log("target 不一致！")
+        dsp_message = "target 不一致！"
+        set_target_error(true)
+      }
     }else{
-      set_j4_rotate(wk_j4_rotate)
+      set_target_error(true)
     }
     set_dsp_message(dsp_message)
   }
@@ -458,8 +701,8 @@ export default function Home() {
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
-      require("aframe");
-      setTimeout(set_rendered(true),1)
+      //require("aframe");
+      setTimeout(()=>set_rendered(true),500)
       console.log('set_rendered')
 
       if(!registered){
@@ -570,7 +813,7 @@ export default function Home() {
     <>
       <a-scene scene>
         <a-entity oculus-touch-controls="hand: right" vr-controller-right visible={`${false}`}></a-entity>
-        <a-plane position="0 0 0" rotation="-90 0 0" width="10" height="10" color="#7BC8A4"></a-plane>
+        <a-plane position="0 0 0" rotation="-90 0 0" width="10" height="10" color={target_error?"#ff7f50":"#7BC8A4"}></a-plane>
         <Assets/>
         <Select_Robot {...robotProps}/>
         <Cursor3dp j_id="20" pos={{x:0,y:0,z:0}} visible={cursor_vis}>
@@ -586,6 +829,7 @@ export default function Home() {
           <a-camera id="camera" wasd-controls-enabled={false} look-controls-enabled={false} position="0 0 0"></a-camera>
         </a-entity>
         <a-sphere position={edit_pos(target)} scale="0.012 0.012 0.012" color="yellow" visible={`${true}`}></a-sphere>
+        <a-sphere position={edit_pos(target)} scale="0.012 0.012 0.012" color={target_error?"red":"yellow"}></a-sphere>
         <a-box position={edit_pos(test_pos)} scale="0.03 0.03 0.03" color="green" visible={`${box_vis}`}></a-box>
         <Line pos1={{x:1,y:0.0001,z:1}} pos2={{x:-1,y:0.0001,z:-1}} visible={cursor_vis} color="white"></Line>
         <Line pos1={{x:1,y:0.0001,z:-1}} pos2={{x:-1,y:0.0001,z:1}} visible={cursor_vis} color="white"></Line>
