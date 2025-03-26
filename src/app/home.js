@@ -197,7 +197,7 @@ export default function Home() {
   }
 
   const getDivision = (start_quaternion,end_quaternion)=>{
-    const move_unit_1 = ((target_move_distance*1000)/joint_move_speed_ms)
+    const move_unit_1 = ((target_move_distance*555)/joint_move_speed_ms)
     const division_1 = Math.ceil(move_unit_1)+1
 
     const deff_quaternion = start_quaternion.clone().invert().multiply(end_quaternion)
@@ -247,7 +247,7 @@ export default function Home() {
   }
 
   React.useEffect(() => {
-    if (j1_object !== undefined) {
+    if (rendered && j1_object !== undefined) {
       const wk_switch = j1_rotate_table.length === 0
       if(j1_rotate_table.length > 1){
         j1_rotate_table.pop()
@@ -262,7 +262,7 @@ export default function Home() {
   }, [j1_rotate])
 
   React.useEffect(() => {
-    if (j2_object !== undefined) {
+    if (rendered && j2_object !== undefined) {
       const wk_switch = j2_rotate_table.length === 0
       if(j2_rotate_table.length > 1){
         j2_rotate_table.pop()
@@ -277,7 +277,7 @@ export default function Home() {
   }, [j2_rotate])
 
   React.useEffect(() => {
-    if (j3_object !== undefined) {
+    if (rendered && j3_object !== undefined) {
       const wk_switch = j3_rotate_table.length === 0
       if(j3_rotate_table.length > 1){
         j3_rotate_table.pop()
@@ -292,7 +292,7 @@ export default function Home() {
   }, [j3_rotate])
 
   React.useEffect(() => {
-    if (j4_object !== undefined) {
+    if (rendered && j4_object !== undefined) {
       const wk_switch = j4_rotate_table.length === 0
       if(j4_rotate_table.length > 1){
         j4_rotate_table.pop()
@@ -307,7 +307,7 @@ export default function Home() {
   }, [j4_rotate])
 
   React.useEffect(() => {
-    if (j5_object !== undefined) {
+    if (rendered && j5_object !== undefined) {
       const wk_switch = j5_rotate_table.length === 0
       if(j5_rotate_table.length > 1){
         j5_rotate_table.pop()
@@ -322,7 +322,7 @@ export default function Home() {
   }, [j5_rotate])
 
   React.useEffect(() => {
-    if (j6_object !== undefined) {
+    if (rendered && j6_object !== undefined) {
       const wk_switch = j6_rotate_table.length === 0
       if(j6_rotate_table.length > 1){
         j6_rotate_table.pop()
@@ -337,7 +337,7 @@ export default function Home() {
   }, [j6_rotate])
 
   React.useEffect(() => {
-    if (j1_object !== undefined) {
+    if (rendered && j1_object !== undefined) {
       target_move_distance = 0
       const rotate_value = round(normalize180(input_rotate[0]))
       set_j1_rotate(rotate_value)
@@ -345,7 +345,7 @@ export default function Home() {
   }, [input_rotate[0]])
 
   React.useEffect(() => {
-    if (j2_object !== undefined) {
+    if (rendered && j2_object !== undefined) {
       target_move_distance = 0
       const rotate_value = round(normalize180(input_rotate[1]))
       set_j2_rotate(rotate_value)
@@ -353,7 +353,7 @@ export default function Home() {
   }, [input_rotate[1]])
 
   React.useEffect(() => {
-    if (j4_object !== undefined) {
+    if (rendered && j4_object !== undefined) {
       target_move_distance = 0
       const rotate_value = round(normalize180(input_rotate[2]))
       set_j3_rotate(rotate_value)
@@ -361,7 +361,7 @@ export default function Home() {
   }, [input_rotate[2]])
 
   React.useEffect(() => {
-    if (j4_object !== undefined) {
+    if (rendered && j4_object !== undefined) {
       target_move_distance = 0
       const rotate_value = round(normalize180(input_rotate[3]))
       set_j4_rotate(rotate_value)
@@ -369,7 +369,7 @@ export default function Home() {
   }, [input_rotate[3]])
 
   React.useEffect(() => {
-    if (j5_object !== undefined) {
+    if (rendered && j5_object !== undefined) {
       target_move_distance = 0
       const rotate_value = round(normalize180(input_rotate[4]-90))
       set_j5_rotate(rotate_value)
@@ -377,7 +377,7 @@ export default function Home() {
   }, [input_rotate[4]])
 
   React.useEffect(() => {
-    if (j6_object !== undefined) {
+    if (rendered && j6_object !== undefined) {
       target_move_distance = 0
       const rotate_value = round(normalize180(input_rotate[5]))
       set_j6_rotate(rotate_value)
@@ -705,7 +705,7 @@ export default function Home() {
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       //require("aframe");
-      setTimeout(()=>set_rendered(true),500)
+      setTimeout(()=>set_rendered(true),1)
       console.log('set_rendered')
 
       if(!registered){
