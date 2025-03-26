@@ -23,7 +23,7 @@ let start_rotation = new THREE.Euler(0.6654549523360951,0,0,order)
 let save_rotation = new THREE.Euler(0.6654549523360951,0,0,order)
 let current_rotation = new THREE.Euler(0.6654549523360951,0,0,order)
 const joint_move_speed_ms = 10
-const max_move_unit = (0.1/100)
+const max_move_unit = (0.1/180)
 const j1_rotate_table = []
 const j2_rotate_table = []
 const j3_rotate_table = []
@@ -210,11 +210,6 @@ export default function Home() {
 
   const j_move_sub = (j_object,j_rotate_table,vec_base,idx,start_quaternion,end_quaternion,division,count=1)=>{
     j_object.quaternion.slerpQuaternions(start_quaternion,end_quaternion,(count/division))
-    const wk_euler = new THREE.Quaternion().angleTo(j_object.quaternion)
-    set_rotate((org)=>{
-      org[idx] = round(toAngle(wk_euler),3)
-      return org
-    })
     if(count < division){
       setTimeout(()=>{
         j_move_sub(j_object,j_rotate_table,vec_base,idx,start_quaternion,end_quaternion,division,count+1)
@@ -258,6 +253,10 @@ export default function Home() {
           j_move(j1_object,j1_rotate_table,y_vec_base,0)
         },0)
       }
+      set_rotate((org)=>{
+        org[0] = round(j1_rotate,3)
+        return org
+      })
     }
   }, [j1_rotate])
 
@@ -273,6 +272,10 @@ export default function Home() {
           j_move(j2_object,j2_rotate_table,x_vec_base,1)
         },0)
       }
+      set_rotate((org)=>{
+        org[1] = round(j2_rotate,3)
+        return org
+      })
     }
   }, [j2_rotate])
 
@@ -288,6 +291,10 @@ export default function Home() {
           j_move(j3_object,j3_rotate_table,x_vec_base,2)
         },0)
       }
+      set_rotate((org)=>{
+        org[2] = round(j3_rotate,3)
+        return org
+      })
     }
   }, [j3_rotate])
 
@@ -303,6 +310,10 @@ export default function Home() {
           j_move(j4_object,j4_rotate_table,x_vec_base,3)
         },0)
       }
+      set_rotate((org)=>{
+        org[3] = round(j4_rotate,3)
+        return org
+      })
     }
   }, [j4_rotate])
 
@@ -318,6 +329,10 @@ export default function Home() {
           j_move(j5_object,j5_rotate_table,y_vec_base,4)
         },0)
       }
+      set_rotate((org)=>{
+        org[4] = round(j5_rotate,3)
+        return org
+      })
     }
   }, [j5_rotate])
 
@@ -333,8 +348,21 @@ export default function Home() {
           j_move(j6_object,j6_rotate_table,z_vec_base,5)
         },0)
       }
+      set_rotate((org)=>{
+        org[5] = round(j6_rotate,3)
+        return org
+      })
     }
   }, [j6_rotate])
+
+  React.useEffect(() => {
+    if (rendered) {
+      set_rotate((org)=>{
+        org[6] = round(j7_rotate,3)
+        return org
+      })
+    }
+  }, [j7_rotate])
 
   React.useEffect(() => {
     if (rendered && j1_object !== undefined) {
