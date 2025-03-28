@@ -253,10 +253,6 @@ export default function Home() {
           j_move(j1_object,j1_rotate_table,y_vec_base,0)
         },0)
       }
-      set_rotate((org)=>{
-        org[0] = round(j1_rotate,3)
-        return org
-      })
     }
   }, [j1_rotate])
 
@@ -272,10 +268,6 @@ export default function Home() {
           j_move(j2_object,j2_rotate_table,x_vec_base,1)
         },0)
       }
-      set_rotate((org)=>{
-        org[1] = round(j2_rotate,3)
-        return org
-      })
     }
   }, [j2_rotate])
 
@@ -291,10 +283,6 @@ export default function Home() {
           j_move(j3_object,j3_rotate_table,x_vec_base,2)
         },0)
       }
-      set_rotate((org)=>{
-        org[2] = round(j3_rotate,3)
-        return org
-      })
     }
   }, [j3_rotate])
 
@@ -310,10 +298,6 @@ export default function Home() {
           j_move(j4_object,j4_rotate_table,x_vec_base,3)
         },0)
       }
-      set_rotate((org)=>{
-        org[3] = round(j4_rotate,3)
-        return org
-      })
     }
   }, [j4_rotate])
 
@@ -329,10 +313,6 @@ export default function Home() {
           j_move(j5_object,j5_rotate_table,y_vec_base,4)
         },0)
       }
-      set_rotate((org)=>{
-        org[4] = round(j5_rotate,3)
-        return org
-      })
     }
   }, [j5_rotate])
 
@@ -348,21 +328,18 @@ export default function Home() {
           j_move(j6_object,j6_rotate_table,z_vec_base,5)
         },0)
       }
-      set_rotate((org)=>{
-        org[5] = round(j6_rotate,3)
-        return org
-      })
     }
   }, [j6_rotate])
 
   React.useEffect(() => {
-    if (rendered) {
-      set_rotate((org)=>{
-        org[6] = round(j7_rotate,3)
-        return org
-      })
+    if(rendered){
+      const new_rotate = [
+        round(j1_rotate,3),round(j2_rotate,3),round(j3_rotate,3),
+        round(j4_rotate,3),round(j5_rotate,3),round(j6_rotate,3),round(j7_rotate,3)
+      ]
+      set_rotate(new_rotate)
     }
-  }, [j7_rotate])
+  }, [j1_rotate,j2_rotate,j3_rotate,j4_rotate,j5_rotate,j6_rotate,j7_rotate])
 
   React.useEffect(() => {
     if (rendered && j1_object !== undefined) {
