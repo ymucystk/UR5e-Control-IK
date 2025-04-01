@@ -26,8 +26,7 @@ const z_vec_base = new THREE.Vector3(0,0,1).normalize()
 let start_rotation = new THREE.Euler(0.6654549523360951,0,0,order)
 let save_rotation = new THREE.Euler(0.6654549523360951,0,0,order)
 let current_rotation = new THREE.Euler(0.6654549523360951,0,0,order)
-const joint_move_speed_ms = 10
-const max_move_unit = (1/360)
+const max_move_unit = (1/180)
 const rotate_table = [[],[],[],[],[],[]]
 const object_table = []
 const rotvec_table = [y_vec_base,x_vec_base,x_vec_base,x_vec_base,y_vec_base,z_vec_base]
@@ -199,7 +198,7 @@ export default function Home() {
           rotate_table[i][0].starttime = performance.now()
           rotate_table[i][0].start_quaternion = object_table[i].quaternion.clone()
           rotate_table[i][0].end_quaternion = new THREE.Quaternion().setFromAxisAngle(rotvec_table[i],toRadian(rotate_table[i][0].rot))
-          const move_time_1 = target_move_distance*555
+          const move_time_1 = target_move_distance*1000
           const wk_euler = new THREE.Quaternion().angleTo(
             rotate_table[i][0].start_quaternion.clone().invert().multiply(rotate_table[i][0].end_quaternion))
           const move_time_2 = (toAngle(wk_euler)*max_move_unit)*1000
