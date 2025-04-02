@@ -31,6 +31,7 @@ const rotate_table = [[],[],[],[],[],[]]
 const object_table = []
 const rotvec_table = [y_vec_base,x_vec_base,x_vec_base,x_vec_base,y_vec_base,z_vec_base]
 let target_move_distance = 0.2
+const target_move_speed = (1000/1)
 let real_target = {x:0.3,y:0.65,z:-0.3}
 
 export default function Home() {
@@ -198,7 +199,7 @@ export default function Home() {
           rotate_table[i][0].starttime = performance.now()
           rotate_table[i][0].start_quaternion = object_table[i].quaternion.clone()
           rotate_table[i][0].end_quaternion = new THREE.Quaternion().setFromAxisAngle(rotvec_table[i],toRadian(rotate_table[i][0].rot))
-          const move_time_1 = target_move_distance*1000
+          const move_time_1 = target_move_distance*target_move_speed
           const wk_euler = new THREE.Quaternion().angleTo(
             rotate_table[i][0].start_quaternion.clone().invert().multiply(rotate_table[i][0].end_quaternion))
           const move_time_2 = (toAngle(wk_euler)*max_move_unit)*1000
