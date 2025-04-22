@@ -34,8 +34,19 @@ let target_move_distance = 0.2
 const target_move_speed = (1000/1)
 let real_target = {x:0.3,y:0.65,z:-0.3}
 
-export default function Home() {
-  const [now, setNow] = React.useState(new Date())
+const j1_Correct_value = 0.0
+const j2_Correct_value = 0.0
+const j3_Correct_value = 0.0
+const j4_Correct_value = 0.0
+const j5_Correct_value = 90.0
+const j6_Correct_value = 0.0
+const j7_Correct_value = 0.0
+
+let tickprev = 0
+const controller_object_position = new THREE.Vector3()
+const controller_object_rotation = new THREE.Euler(0,0,0,order)
+
+export default function Home(props) {
   const [rendered,set_rendered] = React.useState(false)
   const robotNameList = ["Model"]
   const [robotName,set_robotName] = React.useState(robotNameList[0])
@@ -58,7 +69,6 @@ export default function Home() {
   const [p16_object,set_p16_object] = React.useState(new THREE.Object3D())
   const [p51_object,set_p51_object] = React.useState(new THREE.Object3D())
 
-  const [controller_object,set_controller_object] = React.useState(new THREE.Object3D())
   const [start_pos,set_start_pos] = React.useState(new THREE.Vector3())
   const [save_target,set_save_target] = React.useState()
 
@@ -68,14 +78,12 @@ export default function Home() {
 
   const [c_pos_x,set_c_pos_x] = React.useState(0)
   const [c_pos_y,set_c_pos_y] = React.useState(0.4)
-  const [c_pos_z,set_c_pos_z] = React.useState(-1.0)
+  const [c_pos_z,set_c_pos_z] = React.useState(1.0)
   const [c_deg_x,set_c_deg_x] = React.useState(0)
-  const [c_deg_y,set_c_deg_y] = React.useState(180)
+  const [c_deg_y,set_c_deg_y] = React.useState(0)
   const [c_deg_z,set_c_deg_z] = React.useState(0)
 
-  const [wrist_rot_x,set_wrist_rot_x_org] = React.useState(180)
-  const [wrist_rot_y,set_wrist_rot_y_org] = React.useState(0)
-  const [wrist_rot_z,set_wrist_rot_z_org] = React.useState(0)
+  const [wrist_rot,set_wrist_rot_org] = React.useState({x:180,y:0,z:0})
   const [tool_rotate,set_tool_rotate] = React.useState(0)
   const [wrist_degree,set_wrist_degree] = React.useState({direction:0,angle:0})
   const [dsp_message,set_dsp_message] = React.useState("")
@@ -86,47 +94,22 @@ export default function Home() {
   const [target,set_target_org] = React.useState(real_target)
   const [p15_16_len,set_p15_16_len] = React.useState(joint_pos.j7.z)
  
-  const reqIdRef = React.useRef()
-
-  const loop = ()=>{
-    setNow(performance.now());
-    reqIdRef.current = window.requestAnimationFrame(loop)
-  }
-
-  React.useEffect(() => {
-    loop()
-    return () => window.cancelAnimationFrame(reqIdRef.current)
-  },[])
+  const [do_target_update, set_do_target_update] = React.useState(0)
+  const [vrcontroller_move, set_vrcontroller_move] = React.useState(false)
 
   const set_target = (new_pos)=>{
-    set_target_org((prev_pos)=>{
-      target_move_distance = distance(real_target,new_pos)
-      return new_pos
-    })
+    target_move_distance = distance(real_target,new_pos)
+    set_target_org(new_pos)
   }
 
-  const set_wrist_rot_x = (new_rot)=>{
-    set_wrist_rot_x_org((prev_rot)=>{
-      target_move_distance = 0
-      return new_rot
-    })
-  }
-  const set_wrist_rot_y = (new_rot)=>{
-    set_wrist_rot_y_org((prev_rot)=>{
-      target_move_distance = 0
-      return new_rot
-    })
-  }
-  const set_wrist_rot_z = (new_rot)=>{
-    set_wrist_rot_z_org((prev_rot)=>{
-      target_move_distance = 0
-      return new_rot
-    })
+  const set_wrist_rot = (new_rot)=>{
+    target_move_distance = 0
+    set_wrist_rot_org({...new_rot})
   }
 
   React.useEffect(() => {
     if(rendered && vrModeRef.current && trigger_on){
-      const move_pos = pos_sub(start_pos,controller_object.position)
+      const move_pos = pos_sub(start_pos,controller_object_position)
       move_pos.x = move_pos.x/5
       move_pos.y = move_pos.y/5
       move_pos.z = move_pos.z/5
@@ -142,19 +125,19 @@ export default function Home() {
       }
       set_target((target_pos))
     }
-  },[controller_object.position.x,controller_object.position.y,controller_object.position.z])
+  },[controller_object_position.x,controller_object_position.y,controller_object_position.z])
 
   React.useEffect(() => {
     if(rendered && vrModeRef.current && trigger_on){
       const quat_start = new THREE.Quaternion().setFromEuler(start_rotation);
-      const quat_controller = new THREE.Quaternion().setFromEuler(controller_object.rotation);
+      const quat_controller = new THREE.Quaternion().setFromEuler(controller_object_rotation);
       const quatDifference1 = quat_start.clone().invert().multiply(quat_controller);
 
       const quat_save = new THREE.Quaternion().setFromEuler(save_rotation);
       const quatDifference2 = quat_start.clone().invert().multiply(quat_save);
 
       const wk_mtx = quat_start.clone().multiply(quatDifference1).multiply(quatDifference2)
-      current_rotation = new THREE.Euler().setFromQuaternion(wk_mtx,controller_object.rotation.order)
+      current_rotation = new THREE.Euler().setFromQuaternion(wk_mtx,controller_object_rotation.order)
 
       wk_mtx.multiply(
         new THREE.Quaternion().setFromEuler(
@@ -162,21 +145,19 @@ export default function Home() {
             (0.6654549523360951*-1),  //x
             Math.PI,  //y
             Math.PI,  //z
-            controller_object.rotation.order
+            controller_object_rotation.order
           )
         )
       )
 
-      const wk_euler = new THREE.Euler().setFromQuaternion(wk_mtx,controller_object.rotation.order)
-      set_wrist_rot_x(round(toAngle(wk_euler.x)))
-      set_wrist_rot_y(round(toAngle(wk_euler.y)))
-      set_wrist_rot_z(round(toAngle(wk_euler.z)))
+      const wk_euler = new THREE.Euler().setFromQuaternion(wk_mtx,controller_object_rotation.order)
+      set_wrist_rot({x:round(toAngle(wk_euler.x)),y:round(toAngle(wk_euler.y)),z:round(toAngle(wk_euler.z))})
     }
-  },[controller_object.rotation.x,controller_object.rotation.y,controller_object.rotation.z])
+  },[controller_object_rotation.x,controller_object_rotation.y,controller_object_rotation.z])
 
   React.useEffect(() => {
     if(rendered){
-      target_update(true)
+      set_do_target_update((prev) => prev + 1)
     }
   },[rendered])
 
@@ -191,11 +172,14 @@ export default function Home() {
     set_robotName(get)
   }
 
-  React.useEffect(()=>{
+  //React.useEffect(()=>{
+  const joint_slerp = () => {
+    let recursive_flg = false
     for(let i=0; i<rotate_table.length; i=i+1){
       const current_table = rotate_table[i]
       const current_object3D = object3D_table[i]
-      if(current_table.length > 0){
+      if(current_object3D !== undefined && current_table.length > 0){
+        recursive_flg = true
         const current_data = current_table[0]
         if(current_data.first){
           current_data.first = false
@@ -220,128 +204,113 @@ export default function Home() {
         }
       }
     }
-  }, [now])
+    if(recursive_flg){
+      setTimeout(()=>{joint_slerp()},0)
+    }
+  }
+  //}, [now])
 
   React.useEffect(() => {
-    if (rendered && object3D_table[0] !== undefined) {
-      if(rotate_table[0].length > 1){
-        rotate_table[0].pop()
-      }
-      rotate_table[0].push({rot:j1_rotate,first:true})
+    if(rotate_table[0].length > 1){
+      rotate_table[0].pop()
     }
+    rotate_table[0].push({rot:j1_rotate,first:true})
   }, [j1_rotate])
 
   React.useEffect(() => {
-    if (rendered && object3D_table[1] !== undefined) {
-      if(rotate_table[1].length > 1){
-        rotate_table[1].pop()
-      }
-      rotate_table[1].push({rot:j2_rotate,first:true})
+    if(rotate_table[1].length > 1){
+      rotate_table[1].pop()
     }
+    rotate_table[1].push({rot:j2_rotate,first:true})
   }, [j2_rotate])
 
   React.useEffect(() => {
-    if (rendered && object3D_table[2] !== undefined) {
-      if(rotate_table[2].length > 1){
-        rotate_table[2].pop()
-      }
-      rotate_table[2].push({rot:j3_rotate,first:true})
+    if(rotate_table[2].length > 1){
+      rotate_table[2].pop()
     }
+    rotate_table[2].push({rot:j3_rotate,first:true})
   }, [j3_rotate])
 
   React.useEffect(() => {
-    if (rendered && object3D_table[3] !== undefined) {
-      if(rotate_table[3].length > 1){
-        rotate_table[3].pop()
-      }
-      rotate_table[3].push({rot:j4_rotate,first:true})
+    if(rotate_table[3].length > 1){
+      rotate_table[3].pop()
     }
+    rotate_table[3].push({rot:j4_rotate,first:true})
   }, [j4_rotate])
 
   React.useEffect(() => {
-    if (rendered && object3D_table[4] !== undefined) {
-      if(rotate_table[4].length > 1){
-        rotate_table[4].pop()
-      }
-      rotate_table[4].push({rot:j5_rotate,first:true})
+    if(rotate_table[4].length > 1){
+      rotate_table[4].pop()
     }
+    rotate_table[4].push({rot:j5_rotate,first:true})
   }, [j5_rotate])
 
   React.useEffect(() => {
-    if (rendered && object3D_table[5] !== undefined) {
-      if(rotate_table[5].length > 1){
-        rotate_table[5].pop()
-      }
-      rotate_table[5].push({rot:j6_rotate,first:true})
+    if(rotate_table[5].length > 1){
+      rotate_table[5].pop()
     }
+    rotate_table[5].push({rot:j6_rotate,first:true})
   }, [j6_rotate])
 
   React.useEffect(() => {
+    setTimeout(()=>{joint_slerp()},0)
+
     if(rendered){
       const new_rotate = [
-        round(j1_rotate,3),round(j2_rotate,3),round(j3_rotate,3),
-        round(j4_rotate,3),round(j5_rotate,3),round(j6_rotate,3),round(j7_rotate,3)
+        round(normalize180(j1_rotate+j1_Correct_value),3),
+        round(normalize180(j2_rotate+j2_Correct_value),3),
+        round(normalize180(j3_rotate+j3_Correct_value),3),
+        round(normalize180(j4_rotate+j4_Correct_value),3),
+        round(normalize180(j5_rotate+j5_Correct_value),3),
+        round(normalize180(j6_rotate+j6_Correct_value),3),
+        round(j7_rotate+j7_Correct_value,3)
       ]
       set_rotate(new_rotate)
     }
   }, [j1_rotate,j2_rotate,j3_rotate,j4_rotate,j5_rotate,j6_rotate,j7_rotate])
 
   React.useEffect(() => {
-    if (rendered && object3D_table[0] !== undefined) {
-      target_move_distance = 0
-      const rotate_value = round(normalize180(input_rotate[0]))
-      set_j1_rotate(rotate_value)
-    }
+    target_move_distance = 0
+    const rotate_value = round(normalize180(input_rotate[0]-j1_Correct_value))
+    set_j1_rotate(rotate_value)
   }, [input_rotate[0]])
 
   React.useEffect(() => {
-    if (rendered && object3D_table[1] !== undefined) {
-      target_move_distance = 0
-      const rotate_value = round(normalize180(input_rotate[1]))
-      set_j2_rotate(rotate_value)
-    }
+    target_move_distance = 0
+    const rotate_value = round(normalize180(input_rotate[1]-j2_Correct_value))
+    set_j2_rotate(rotate_value)
   }, [input_rotate[1]])
 
   React.useEffect(() => {
-    if (rendered && object3D_table[2] !== undefined) {
-      target_move_distance = 0
-      const rotate_value = round(normalize180(input_rotate[2]))
-      set_j3_rotate(rotate_value)
-    }
+    target_move_distance = 0
+    const rotate_value = round(normalize180(input_rotate[2]-j3_Correct_value))
+    set_j3_rotate(rotate_value)
   }, [input_rotate[2]])
 
   React.useEffect(() => {
-    if (rendered && object3D_table[3] !== undefined) {
-      target_move_distance = 0
-      const rotate_value = round(normalize180(input_rotate[3]))
-      set_j4_rotate(rotate_value)
-    }
+    target_move_distance = 0
+    const rotate_value = round(normalize180(input_rotate[3]-j4_Correct_value))
+    set_j4_rotate(rotate_value)
   }, [input_rotate[3]])
 
   React.useEffect(() => {
-    if (rendered && object3D_table[4] !== undefined) {
-      target_move_distance = 0
-      const rotate_value = round(normalize180(input_rotate[4]-90))
-      set_j5_rotate(rotate_value)
-    }
+    target_move_distance = 0
+    const rotate_value = round(normalize180(input_rotate[4]-j5_Correct_value))
+    set_j5_rotate(rotate_value)
   }, [input_rotate[4]])
 
   React.useEffect(() => {
-    if (rendered && object3D_table[5] !== undefined) {
-      target_move_distance = 0
-      const rotate_value = round(normalize180(input_rotate[5]))
-      set_j6_rotate(rotate_value)
-    }
+    target_move_distance = 0
+    const rotate_value = round(normalize180(input_rotate[5]-j6_Correct_value))
+    set_j6_rotate(rotate_value)
   }, [input_rotate[5]])
 
   React.useEffect(() => {
-    if(rendered){
-      const rotate_value = input_rotate[6]
-      set_j7_rotate(rotate_value)
-    }
+    const rotate_value = input_rotate[6]
+    set_j7_rotate(rotate_value)
   }, [input_rotate[6]])
 
-  const get_j5_quaternion = (rot_x=wrist_rot_x,rot_y=wrist_rot_y,rot_z=wrist_rot_z)=>{
+  const get_j5_quaternion = (rot_x=wrist_rot.x,rot_y=wrist_rot.y,rot_z=wrist_rot.z)=>{
     return new THREE.Quaternion().setFromEuler(
       new THREE.Euler(toRadian(rot_x), toRadian(rot_y), toRadian(rot_z), order)
     )
@@ -355,10 +324,10 @@ export default function Home() {
 
   React.useEffect(() => {
     if(rendered){
-      target_update(false)
+      set_do_target_update((prev) => prev + 1)
       p51_object.quaternion.copy(get_j5_quaternion())
     }
-  },[wrist_rot_x,wrist_rot_y,wrist_rot_z])
+  },[wrist_rot.x,wrist_rot.y,wrist_rot.z])
 
   const quaternionToRotation = (q,v)=>{
     const q_conjugate = q.clone().conjugate()
@@ -394,11 +363,15 @@ export default function Home() {
 
   React.useEffect(() => {
     if(rendered){
-      target_update(true)
+      set_do_target_update((prev) => prev + 1)
     }
-  },[target,tool_rotate,p15_16_len])
+  },[target.x,target.y,target.z,tool_rotate,p15_16_len])
 
-  const target_update = (target_move)=>{
+  React.useEffect(() => {
+    target_update()
+  },[do_target_update])
+
+  const target_update = ()=>{
     const p21_pos = get_p21_pos()
     const dir_sign1 = p21_pos.x < 0 ? -1 : 1
     const xz_vector = new THREE.Vector3(p21_pos.x,0,p21_pos.z).normalize()
@@ -420,10 +393,10 @@ export default function Home() {
 
     const p15_16_offset_pos = {...p21_pos}
     const new_p15_pos = {x:(target.x - p15_16_offset_pos.x),y:(target.y - p15_16_offset_pos.y),z:(target.z - p15_16_offset_pos.z)}
-    target15_update(new_p15_pos,direction,angle,target_move)
+    target15_update(new_p15_pos,direction,angle)
   }
 
-  const target15_update = (target15,wrist_direction,wrist_angle,target_move)=>{
+  const target15_update = (target15,wrist_direction,wrist_angle)=>{
     let dsp_message = ""
     const distance_center_t15 = distance({x:0,y:0,z:0},{x:target15.x,y:0,z:target15.z})
     const {k:kakudo_t15} = calc_side_4(distance_center_t15,joint_pos.j5.x)
@@ -650,7 +623,7 @@ export default function Home() {
       const p16_pos = new THREE.Vector3().applyMatrix4(p16_object.matrix)
       set_p15_16_len(distance(p15_pos,p16_pos))
     }
-  },[now])
+  },[p16_object.matrix.elements[14]])
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -709,7 +682,6 @@ export default function Home() {
         AFRAME.registerComponent('vr-controller-right', {
           schema: {type: 'string', default: ''},
           init: function () {
-            set_controller_object(this.el.object3D)
             this.el.object3D.rotation.order = order
             this.el.addEventListener('triggerdown', (evt)=>{
               start_rotation = this.el.object3D.rotation.clone()
@@ -722,6 +694,24 @@ export default function Home() {
               set_save_target(undefined)
               trigger_on = false
             });
+          },
+          tick: function (time) {
+            if((tickprev + 30) < time){
+              tickprev = time
+              let move = false
+              const obj = this.el.object3D
+              if(!controller_object_position.equals(obj.position)){
+                controller_object_position.set(obj.position.x,obj.position.y,obj.position.z)
+                move = true
+              }
+              if(!controller_object_rotation.equals(obj.rotation)){
+                controller_object_rotation.set(obj.rotation.x,obj.rotation.y,obj.rotation.z,obj.rotation.order)
+                move = true
+              }
+              if(move){
+                set_vrcontroller_move((flg)=>!flg)
+              }
+            }
           }
         });
         AFRAME.registerComponent('scene', {
@@ -752,7 +742,7 @@ export default function Home() {
     j4_rotate,set_j4_rotate,j5_rotate,set_j5_rotate,j6_rotate,set_j6_rotate,j7_rotate,set_j7_rotate,
     c_pos_x,set_c_pos_x,c_pos_y,set_c_pos_y,c_pos_z,set_c_pos_z,
     c_deg_x,set_c_deg_x,c_deg_y,set_c_deg_y,c_deg_z,set_c_deg_z,
-    wrist_rot_x,set_wrist_rot_x,wrist_rot_y,set_wrist_rot_y,wrist_rot_z,set_wrist_rot_z,
+    wrist_rot,set_wrist_rot,
     tool_rotate,set_tool_rotate,normalize180
   }
 
@@ -764,10 +754,10 @@ export default function Home() {
   if(rendered){
     return (
     <>
-      <a-scene scene>
+      <a-scene scene xr-mode-ui="XRMode: ar" >
         <a-entity oculus-touch-controls="hand: right" vr-controller-right visible={`${false}`}></a-entity>
-        <a-plane position="0 0 0" rotation="-90 0 0" width="10" height="10" color={target_error?"#ff7f50":"#7BC8A4"}></a-plane>
-        <Assets/>
+        <a-plane position="0 0 0" rotation="-90 0 0" width="0.5" height="0.5" color={target_error?"#ff7f50":"#7BC8A4"}></a-plane>
+        <Assets viewer={props.viewer}/>
         <Select_Robot {...robotProps}/>
         <Cursor3dp j_id="20" pos={{x:0,y:0,z:0}} visible={cursor_vis}>
           <Cursor3dp j_id="21" pos={{x:0,y:0,z:p15_16_len}} visible={cursor_vis}></Cursor3dp>
@@ -781,8 +771,7 @@ export default function Home() {
         <a-entity id="rig" position={`${c_pos_x} ${c_pos_y} ${c_pos_z}`} rotation={`${c_deg_x} ${c_deg_y} ${c_deg_z}`}>
           <a-camera id="camera" wasd-controls-enabled={false} look-controls-enabled={false} position="0 0 0"></a-camera>
         </a-entity>
-        <a-sphere position={edit_pos(target)} scale="0.012 0.012 0.012" color="yellow" visible={`${true}`}></a-sphere>
-        <a-sphere position={edit_pos(target)} scale="0.012 0.012 0.012" color={target_error?"red":"yellow"}></a-sphere>
+        <a-sphere position={edit_pos(target)} scale="0.012 0.012 0.012" color={target_error?"red":"yellow"} visible={`${!props.viewer}`}></a-sphere>
         <a-box position={edit_pos(test_pos)} scale="0.03 0.03 0.03" color="green" visible={`${box_vis}`}></a-box>
         <Line pos1={{x:1,y:0.0001,z:1}} pos2={{x:-1,y:0.0001,z:-1}} visible={cursor_vis} color="white"></Line>
         <Line pos1={{x:1,y:0.0001,z:-1}} pos2={{x:-1,y:0.0001,z:1}} visible={cursor_vis} color="white"></Line>
@@ -798,28 +787,29 @@ export default function Home() {
     );
   }else{
     return(
-      <a-scene>
-        <Assets/>
+      <a-scene xr-mode-ui="XRMode: xr">
+        <Assets viewer={props.viewer}/>
       </a-scene>
     )
   }
 }
 
-const Assets = ()=>{
+const Assets = (props)=>{
+  const path = props.viewer?"../":""
   return (
     <a-assets>
       {/*Model*/}
-      <a-asset-items id="base" src="UR5e_Base.gltf" ></a-asset-items>
-      <a-asset-items id="j1" src="UR5e_j1.gltf" ></a-asset-items>
-      <a-asset-items id="j2" src="UR5e_j2.gltf" ></a-asset-items>
-      <a-asset-items id="j3" src="UR5e_j3.gltf" ></a-asset-items>
-      <a-asset-items id="j4" src="UR5e_j4.gltf" ></a-asset-items>
-      <a-asset-items id="j5" src="UR5e_j5.gltf" ></a-asset-items>
-      <a-asset-items id="j6" src="UR5e_j6.gltf" ></a-asset-items>
-      <a-asset-items id="GripperBase" src="GripperBase.gltf" ></a-asset-items>
-      <a-asset-items id="GripperFinger1" src="GripperFinger1.gltf" ></a-asset-items>
-      <a-asset-items id="GripperFinger2" src="GripperFinger2.gltf" ></a-asset-items>
-      <a-asset-items id="E-Pick" src="E-Pick.gltf" ></a-asset-items>
+      <a-asset-items id="base" src={`${path}UR5e_Base.gltf`} ></a-asset-items>
+      <a-asset-items id="j1" src={`${path}UR5e_j1.gltf`} ></a-asset-items>
+      <a-asset-items id="j2" src={`${path}UR5e_j2.gltf`} ></a-asset-items>
+      <a-asset-items id="j3" src={`${path}UR5e_j3.gltf`} ></a-asset-items>
+      <a-asset-items id="j4" src={`${path}UR5e_j4.gltf`} ></a-asset-items>
+      <a-asset-items id="j5" src={`${path}UR5e_j5.gltf`} ></a-asset-items>
+      <a-asset-items id="j6" src={`${path}UR5e_j6.gltf`} ></a-asset-items>
+      <a-asset-items id="GripperBase" src={`${path}GripperBase.gltf`} ></a-asset-items>
+      <a-asset-items id="GripperFinger1" src={`${path}GripperFinger1.gltf`} ></a-asset-items>
+      <a-asset-items id="GripperFinger2" src={`${path}GripperFinger2.gltf`} ></a-asset-items>
+      <a-asset-items id="E-Pick" src={`${path}E-Pick.gltf`} ></a-asset-items>
     </a-assets>
   )
 }
