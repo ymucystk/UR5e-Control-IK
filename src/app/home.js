@@ -123,7 +123,7 @@ export default function Home(props) {
       if(target_pos.y < 0.012){
         target_pos.y = 0.012
       }
-      set_target((target_pos))
+      set_target({x:round(target_pos.x),y:round(target_pos.y),z:round(target_pos.z)})
     }
   },[controller_object_position.x,controller_object_position.y,controller_object_position.z])
 
