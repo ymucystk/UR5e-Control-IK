@@ -181,26 +181,63 @@ export default function Home(props) {
       raw_data = raw_data + current_table.length
       if(current_object3D !== undefined && current_table.length > 0){
         const current_data = current_table[0]
-        if(current_data.first){
-          current_data.first = false
-          current_data.starttime = performance.now()
-          current_data.start_quaternion = current_object3D.quaternion.clone()
-          current_data.end_quaternion = new THREE.Quaternion().setFromAxisAngle(rotvec_table[i],toRadian(current_data.rot))
-          const move_time_1 = target_move_distance*target_move_speed
-          const wk_euler = new THREE.Quaternion().angleTo(
-            current_data.start_quaternion.clone().invert().multiply(current_data.end_quaternion))
-          const move_time_2 = (toAngle(wk_euler)*max_move_unit)*1000
-          current_data.move_time = Math.max(move_time_1,move_time_2)
-          current_data.endtime = current_data.starttime + current_data.move_time
-        }
-        const current_time = performance.now()
-        if(current_time < current_data.endtime){
-          const elapsed_time = current_time - current_data.starttime
-          current_object3D.quaternion.slerpQuaternions(
-            current_data.start_quaternion,current_data.end_quaternion,(elapsed_time/current_data.move_time))
+        if(i===1 || i===2 || i===3){
+          if(current_data.first){
+            current_data.first = false
+            current_data.starttime = performance.now()
+            current_data.start_quaternion = current_object3D.quaternion.clone()
+            const start_angle = quaternionToAngle2(current_data.start_quaternion)
+            const end_angle = current_data.rot
+            const middle_angle = start_angle + ((end_angle - start_angle)/2)
+            current_data.end_quaternion = new THREE.Quaternion().setFromAxisAngle(rotvec_table[i],toRadian(end_angle))
+            current_data.middle_quaternion = new THREE.Quaternion().setFromAxisAngle(rotvec_table[i],toRadian(middle_angle))
+            const move_time_1 = target_move_distance*target_move_speed
+            const wk_euler1 = new THREE.Quaternion().angleTo(
+              current_data.start_quaternion.clone().invert().multiply(current_data.middle_quaternion))
+            const wk_euler2 = new THREE.Quaternion().angleTo(
+              current_data.middle_quaternion.clone().invert().multiply(current_data.end_quaternion))
+            const wk_angle = toAngle(wk_euler1) + toAngle(wk_euler2)
+            const move_time_2 = (wk_angle*max_move_unit)*1000
+            current_data.move_time = Math.max(move_time_1,move_time_2)
+            current_data.midtime = current_data.starttime + (current_data.move_time/2)
+            current_data.endtime = current_data.starttime + current_data.move_time
+          }
+          const current_time = performance.now()
+          if(current_time < current_data.midtime){
+            const elapsed_time = current_time - current_data.starttime
+            current_object3D.quaternion.slerpQuaternions(
+              current_data.start_quaternion,current_data.middle_quaternion,(elapsed_time/(current_data.move_time/2)))
+          }else
+          if(current_time < current_data.endtime){
+            const elapsed_time = current_time - current_data.midtime
+            current_object3D.quaternion.slerpQuaternions(
+              current_data.middle_quaternion,current_data.end_quaternion,(elapsed_time/(current_data.move_time/2)))
+          }else{
+            current_object3D.quaternion.copy(current_data.end_quaternion)
+            current_table.shift()
+          }
         }else{
-          current_object3D.quaternion.copy(current_data.end_quaternion)
-          current_table.shift()
+          if(current_data.first){
+            current_data.first = false
+            current_data.starttime = performance.now()
+            current_data.start_quaternion = current_object3D.quaternion.clone()
+            current_data.end_quaternion = new THREE.Quaternion().setFromAxisAngle(rotvec_table[i],toRadian(current_data.rot))
+            const move_time_1 = target_move_distance*target_move_speed
+            const wk_euler = new THREE.Quaternion().angleTo(
+              current_data.start_quaternion.clone().invert().multiply(current_data.end_quaternion))
+            const move_time_2 = (toAngle(wk_euler)*max_move_unit)*1000
+            current_data.move_time = Math.max(move_time_1,move_time_2)
+            current_data.endtime = current_data.starttime + current_data.move_time
+          }
+          const current_time = performance.now()
+          if(current_time < current_data.endtime){
+            const elapsed_time = current_time - current_data.starttime
+            current_object3D.quaternion.slerpQuaternions(
+              current_data.start_quaternion,current_data.end_quaternion,(elapsed_time/current_data.move_time))
+          }else{
+            current_object3D.quaternion.copy(current_data.end_quaternion)
+            current_table.shift()
+          }
         }
       }
     }
@@ -351,6 +388,29 @@ export default function Home(props) {
     }else{
       return {angle,axis:new THREE.Vector3(0,0,0)}
     }
+  }
+
+  const quaternionToAngle2 = (q)=>{
+    const wk_angle = 2 * Math.acos(round(q.w))
+    if(wk_angle === 0){
+      return toAngle(wk_angle)
+    }
+    let angle = toAngle(wk_angle)
+    const sinHalfAngle = Math.sqrt(1 - q.w * q.w)
+    if (sinHalfAngle > 0) {
+      const axisX = (q.x / sinHalfAngle)
+      const axisY = (q.y / sinHalfAngle)
+      const axisZ = (q.z / sinHalfAngle)
+      const sum = round(axisX + axisY + axisZ)
+      if(Math.abs(sum) === 1){
+        if(sum < 0){
+          angle = angle * -1
+        }
+      }else{
+        console.log("axisX, axisY, axisZ の合計が 1 ではありません。",axisX, axisY, axisZ)
+      }
+    }
+    return angle
   }
 
   const quaternionDifference = (q1,q2)=>{
