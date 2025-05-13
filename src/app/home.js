@@ -294,7 +294,7 @@ export default function Home(props) {
     requestAnimationFrame(joint_slerp)
     //setTimeout(()=>{joint_slerp()},0)
 
-    if(rendered){
+    //if(rendered){
       const new_rotate = [
         round(normalize180(j1_rotate+j1_Correct_value),3),
         round(normalize180(j2_rotate+j2_Correct_value),3),
@@ -305,7 +305,7 @@ export default function Home(props) {
         round(j7_rotate+j7_Correct_value,3)
       ]
       set_rotate(new_rotate)
-    }
+    //}
   }, [j1_rotate,j2_rotate,j3_rotate,j4_rotate,j5_rotate,j6_rotate,j7_rotate])
 
   React.useEffect(() => {
@@ -843,7 +843,9 @@ export default function Home(props) {
       </a-scene>
       <Controller {...controllerProps}/>
       <div className="footer" >
-        <div>{`wrist_degree:{direction:${wrist_degree.direction},angle:${wrist_degree.angle}}  ${dsp_message}`}</div>
+        {`wrist_degree:{direction:${wrist_degree.direction},angle:${wrist_degree.angle}} `}
+        {`${dsp_message} `}
+        {`rotate:[ j1:${rotate[0]}, j2:${rotate[1]}, j3:${rotate[2]}, j4:${rotate[3]}, j5:${rotate[4]}, j6:${rotate[5]} ]`}
       </div>
     </>
     );

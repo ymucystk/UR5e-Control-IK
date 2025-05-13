@@ -8,8 +8,8 @@ body{
 
 .footer{
     position: fixed;
-    bottom: 5px;
-    left: 10px;
+    top: 5px;
+    left: 330px;
     padding: 2px;
     display: grid;
 }
