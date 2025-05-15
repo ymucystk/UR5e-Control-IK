@@ -38,7 +38,7 @@ const j1_Correct_value = 0.0
 const j2_Correct_value = 0.0
 const j3_Correct_value = 0.0
 const j4_Correct_value = 0.0
-const j5_Correct_value = 90.0
+const j5_Correct_value = -90.0
 const j6_Correct_value = 0.0
 const j7_Correct_value = 0.0
 
