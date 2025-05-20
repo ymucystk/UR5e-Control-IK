@@ -88,7 +88,7 @@ export default function Home(props) {
   const [wrist_degree,set_wrist_degree] = React.useState({direction:0,angle:0})
   const [dsp_message,set_dsp_message] = React.useState("")
 
-  const toolNameList = ["No tool","Gripper","E-Pick"]
+  const toolNameList = ["No tool","Gripper","E-Pick","vgc10-1","vgc10-4"]
   const [toolName,set_toolName] = React.useState(toolNameList[0])
 
   const [target,set_target_org] = React.useState(real_target)
@@ -874,6 +874,8 @@ const Assets = (props)=>{
       <a-asset-items id="GripperFinger1" src={`${path}GripperFinger1.gltf`} ></a-asset-items>
       <a-asset-items id="GripperFinger2" src={`${path}GripperFinger2.gltf`} ></a-asset-items>
       <a-asset-items id="E-Pick" src={`${path}E-Pick.gltf`} ></a-asset-items>
+      <a-asset-items id="vgc10-1" src={`${path}gripper_vgc10_1.gltf`} ></a-asset-items>
+      <a-asset-items id="vgc10-4" src={`${path}gripper_vgc10_4.gltf`} ></a-asset-items>
     </a-assets>
   )
 }
@@ -906,22 +908,29 @@ const Model = (props)=>{
 }
 
 const Model_Tool = (props)=>{
-  const Gripperpos = {x:0,y:0,z:0.1037}
-  const Pickpos = {x:0,y:0,z:0.09254}
+  const postbl = [{x:0,y:0,z:0.1037},{x:0,y:0,z:0.09254},{x:0,y:0,z:0.111},{x:0,y:0,z:0.111}]
   const {j7_rotate, joint_pos:{j7:j7pos}, cursor_vis, box_vis, edit_pos} = props
   const return_table = [
     <>
       <Cursor3dp j_id="16" pos={j7pos} visible={cursor_vis}/>
       <a-box color="yellow" scale="0.02 0.02 0.02" position={edit_pos(j7pos)} visible={`${box_vis}`}></a-box>
     </>,
-    <a-entity gltf-model="#GripperBase" position={edit_pos(Gripperpos)} rotation={`0 0 0`}>
+    <a-entity gltf-model="#GripperBase" position={edit_pos(postbl[0])} rotation={`0 0 0`}>
     <a-entity gltf-model="#GripperFinger1" position="0 0 0" rotation={`0 ${j7_rotate} 0`}></a-entity>
     <a-entity gltf-model="#GripperFinger2" position="0 0 0" rotation={`0 ${-j7_rotate} 0`}></a-entity>  
       <Cursor3dp j_id="16" pos={{x:0,y:0,z:0.22}} visible={cursor_vis}/>
       <a-box color="yellow" scale="0.02 0.02 0.02" position={edit_pos({x:0,y:0,z:0.14})} visible={`${box_vis}`}></a-box>
     </a-entity>,
-    <a-entity gltf-model="#E-Pick" position={edit_pos(Pickpos)} rotation={`0 0 0`}>
+    <a-entity gltf-model="#E-Pick" position={edit_pos(postbl[1])} rotation={`0 0 0`}>
       <Cursor3dp j_id="16" pos={{x:0,y:0,z:0.24}} visible={cursor_vis}/>
+      <a-box color="yellow" scale="0.02 0.02 0.02" position={edit_pos({x:0,y:0,z:0.15})} visible={`${box_vis}`}></a-box>
+    </a-entity>,
+    <a-entity gltf-model="#vgc10-1" position={edit_pos(postbl[2])} rotation={`0 0 0`}>
+      <a-box color="yellow" scale="0.02 0.02 0.02" position={edit_pos({x:0,y:0,z:0.15})} visible={`${box_vis}`}></a-box>
+      <Cursor3dp j_id="16" pos={{x:0,y:0,z:0.27}} visible={cursor_vis}/>
+    </a-entity>,
+    <a-entity gltf-model="#vgc10-4" position={edit_pos(postbl[3])} rotation={`0 0 0`}>
+      <Cursor3dp j_id="16" pos={{x:0,y:0,z:0.21}} visible={cursor_vis}/>
       <a-box color="yellow" scale="0.02 0.02 0.02" position={edit_pos({x:0,y:0,z:0.15})} visible={`${box_vis}`}></a-box>
     </a-entity>
   ]
