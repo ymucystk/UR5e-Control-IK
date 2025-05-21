@@ -805,7 +805,7 @@ export default function Home(props) {
     c_pos_x,set_c_pos_x,c_pos_y,set_c_pos_y,c_pos_z,set_c_pos_z,
     c_deg_x,set_c_deg_x,c_deg_y,set_c_deg_y,c_deg_z,set_c_deg_z,
     wrist_rot,set_wrist_rot,
-    tool_rotate,set_tool_rotate,normalize180
+    tool_rotate,set_tool_rotate,normalize180, vr_mode:vrModeRef.current
   }
 
   const robotProps = {
